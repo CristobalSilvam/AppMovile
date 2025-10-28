@@ -8,8 +8,11 @@ fun TaskEntity.toDomain(): Task {
     return Task(
         id = this.id,
         title = this.title,
+        description = description,
+        location = location,
         priority = this.priority,
-        isCompleted = this.isCompleted
+        isCompleted = this.isCompleted,
+        reminderTime = reminderTime
     )
 }
 
@@ -18,7 +21,11 @@ fun Task.toEntity(): TaskEntity {
     return TaskEntity(
         id = this.id,
         title = this.title,
+        description = description,
+        location = location,
         priority = this.priority,
-        isCompleted = this.isCompleted
+        isCompleted = this.isCompleted,
+        reminderTime = reminderTime
+
     )
 }

@@ -13,4 +13,7 @@ interface   TaskRepository {
 
     // Eliminar una tarea
     suspend fun deleteTask(taskId: Int)
+
+    //vista especificacion
+    suspend fun getTaskById(id: Int): Task? //
 }

@@ -8,6 +8,7 @@ import com.example.appmovile.data.repositories.TaskRepositoryImpl
 import com.example.appmovile.domain.repositories.TaskRepository
 import com.example.appmovile.domain.use_cases.DeleteTaskUseCase
 import com.example.appmovile.domain.use_cases.GetCompletedTasksUseCase
+import com.example.appmovile.domain.use_cases.GetTaskDetailsUseCase
 import com.example.appmovile.domain.use_cases.GetTaskUseCase
 import com.example.appmovile.domain.use_cases.SaveTaskUseCase
 import com.example.appmovile.domain.use_cases.UpdateTaskStatusUseCase
@@ -21,6 +22,8 @@ interface AppContainer {
     val updateTaskStatusUseCase: UpdateTaskStatusUseCase
 
     val getCompletedTasksUseCase: GetCompletedTasksUseCase
+
+    val getTaskDetailsUseCase: GetTaskDetailsUseCase
 }
 
 class AppDataContainer(private val context: Context) : AppContainer {
@@ -30,7 +33,8 @@ class AppDataContainer(private val context: Context) : AppContainer {
             context.applicationContext,
             TaskDatabase::class.java,
             "task_db"
-        ).build()
+        ).fallbackToDestructiveMigration()
+            .build()
     }
 
     // Inicialización del DAO
@@ -63,5 +67,8 @@ class AppDataContainer(private val context: Context) : AppContainer {
     }
     override val getCompletedTasksUseCase: GetCompletedTasksUseCase by lazy {
         GetCompletedTasksUseCase(taskRepository)
+    }
+    override val getTaskDetailsUseCase: GetTaskDetailsUseCase by lazy {
+        GetTaskDetailsUseCase(taskRepository)
     }
 }

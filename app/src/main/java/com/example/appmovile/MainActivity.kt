@@ -7,9 +7,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.appmovile.ui.screens.TaskFormScreen
 import com.example.appmovile.ui.screens.TaskListScreen
 import com.example.appmovile.ui.theme.AppMovileTheme
@@ -19,8 +21,11 @@ import com.example.appmovile.ui.viewmodels.TaskFormViewModel
 import com.example.appmovile.ui.viewmodels.TaskFormViewModelFactory
 import com.example.appmovile.di.AppContainer // Interfaz del contenedor DI
 import com.example.appmovile.ui.screens.CompletedTasksScreen
+import com.example.appmovile.ui.screens.TaskDetailScreen
 import com.example.appmovile.ui.viewmodels.CompletedTasksViewModel
 import com.example.appmovile.ui.viewmodels.CompletedTasksViewModelFactory
+import com.example.appmovile.ui.viewmodels.TaskDetailViewModel
+import com.example.appmovile.ui.viewmodels.TaskDetailViewModelFactory
 import com.example.appmovile.utils.createNotificationChannel // Helper de Notificación
 import com.example.appmovile.utils.RequestNotificationPermission // Helper de Permiso
 
@@ -30,6 +35,9 @@ object Destinations {
     const val TASK_FORM = "task_form"
 
     const val COMPLETED_TASKS = "completed_tasks"
+
+    const val TASK_DETAIL = "task_detail/{taskId}"
+    fun taskDetailRoute(taskId: Int) = "task_detail/$taskId"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -96,11 +104,11 @@ fun MyAppNavigation(appContainer: AppContainer) {
             val viewModel: TaskListViewModel = viewModel(factory = taskListViewModelFactory)
             TaskListScreen(
                 viewModel = viewModel,
-                onNavigateToForm = {
-                    navController.navigate(Destinations.TASK_FORM)
-                },
-                onNavigateToCompleted = {
-                    navController.navigate(Destinations.COMPLETED_TASKS)
+                onNavigateToForm = {navController.navigate(Destinations.TASK_FORM)},
+                onNavigateToCompleted = { navController.navigate(Destinations.COMPLETED_TASKS) },
+                onViewDetails = { taskId ->
+                    // Navega a la ruta de detalle pasando el ID
+                    navController.navigate(Destinations.taskDetailRoute(taskId))
                 }
             )
         }
@@ -123,6 +131,29 @@ fun MyAppNavigation(appContainer: AppContainer) {
         composable(Destinations.COMPLETED_TASKS) {
             val viewModel: CompletedTasksViewModel = viewModel(factory = completedTasksViewModelFactory)
             CompletedTasksScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Destinations.TASK_DETAIL,
+            arguments = listOf(navArgument("taskId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            // 1. Extrae el ID de la tarea de la URL
+            val taskId = backStackEntry.arguments?.getInt("taskId") ?: return@composable
+
+            // 2. Crea la fábrica inyectando el ID y los Use Cases
+            val taskDetailViewModelFactory = remember {
+                TaskDetailViewModelFactory(
+                    taskId = taskId,
+                    getTaskDetailsUseCase = appContainer.getTaskDetailsUseCase,
+                    updateTaskStatusUseCase = appContainer.updateTaskStatusUseCase
+                )
+            }
+            val viewModel: TaskDetailViewModel = viewModel(factory = taskDetailViewModelFactory)
+
+            TaskDetailScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() }
             )

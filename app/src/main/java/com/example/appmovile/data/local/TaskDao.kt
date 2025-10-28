@@ -22,4 +22,7 @@ interface TaskDao {
     // Eliminar una tarea por ID
     @Query("DELETE FROM tasks WHERE id = :taskId")
     suspend fun deleteTaskById(taskId: Int)
+
+    @Query("SELECT * FROM tasks WHERE id = :id LIMIT 1") // NUEVO
+    suspend fun getTaskById(id: Int): TaskEntity?
 }

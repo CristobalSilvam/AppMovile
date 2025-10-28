@@ -118,6 +118,24 @@ fun TaskFormScreen(
             }
             Spacer(modifier = Modifier.height(16.dp))
 
+            OutlinedTextField(
+                value = state.description,
+                onValueChange = taskFormViewModel::onDescriptionChange,
+                label = { Text("Descripción (Opcional)") },
+                modifier = Modifier.fillMaxWidth().height(100.dp), // Más alto para descripción
+                maxLines = 3
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // ⬇️ NUEVO: Campo Ubicación ⬇️
+            OutlinedTextField(
+                value = state.location,
+                onValueChange = taskFormViewModel::onLocationChange,
+                label = { Text("Ubicación (Opcional)") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
             // (La selección de prioridad y otros campos irían aquí, llamando a onPriorityChange)
 
             Spacer(modifier = Modifier.weight(1f))

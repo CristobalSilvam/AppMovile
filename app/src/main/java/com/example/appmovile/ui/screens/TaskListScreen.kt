@@ -13,7 +13,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Menu // Importación necesaria para el icono del menú
+import androidx.compose.material.icons.filled.Details
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -24,7 +25,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalNavigationDrawer // Componente clave
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -35,6 +36,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.appmovile.domain.models.Task
 import com.example.appmovile.ui.components.DrawerContent
 import com.example.appmovile.ui.theme.PriorityAccentColor
 import com.example.appmovile.ui.theme.PriorityHigh
@@ -48,7 +50,8 @@ import kotlinx.coroutines.launch
 fun TaskListScreen(
     viewModel: TaskListViewModel,
     onNavigateToForm: () -> Unit,
-    onNavigateToCompleted: () -> Unit
+    onNavigateToCompleted: () -> Unit,
+    onViewDetails: (Int) -> Unit
 ) {
     val state = viewModel.state.collectAsState().value
 
@@ -119,7 +122,8 @@ fun TaskListScreen(
                         TaskItem(
                             task = task,
                             onToggleCompletion = viewModel::toggleTaskCompletion,
-                            onDelete = viewModel::deleteTask
+                            onDelete = viewModel::deleteTask,
+                            onViewDetails = onViewDetails
                         )
                     }
                 }
@@ -141,9 +145,10 @@ fun TaskListScreen(
 
 @Composable
 fun TaskItem(
-    task: com.example.appmovile.domain.models.Task,
-    onToggleCompletion: (com.example.appmovile.domain.models.Task) -> Unit,
-    onDelete: (Int) -> Unit
+    task: Task,
+    onToggleCompletion: (Task) -> Unit,
+    onDelete: (Int) -> Unit,
+    onViewDetails: (Int) -> Unit
 ) {
 
     val cardColor = when (task.priority) {
@@ -192,7 +197,8 @@ fun TaskItem(
                     color = PriorityAccentColor
                 )
             }
-
+            //Boton Detalles
+            IconButton(onClick = { onViewDetails(task.id) }) { Icon(Icons.Filled.Details, contentDescription = "Eliminar" ) }
             // Botón de eliminar
             IconButton(onClick = { onDelete(task.id) }) {
                 Icon(Icons.Filled.Delete, contentDescription = "Eliminar")

@@ -15,6 +15,8 @@ import java.lang.IllegalArgumentException
 // ⬇️ Estado de la UI expuesto a la pantalla
 data class TaskFormState(
     val title: String = "",
+    val description: String = "",
+    val location: String = "",
     val priority: String = "MEDIA",
     val titleError: String? = null,
     val isSaving: Boolean = false,
@@ -22,7 +24,6 @@ data class TaskFormState(
 )
 
 class TaskFormViewModel(
-    // ⬇️ Inyección del Caso de Uso (Lógica de negocio pura)
     private val saveTaskUseCase: SaveTaskUseCase,
     private val applicationContext: Context
 ) : ViewModel() {
@@ -32,21 +33,23 @@ class TaskFormViewModel(
     // Estado expuesto a la UI (solo lectura)
     val state: StateFlow<TaskFormState> = _state.asStateFlow()
 
-    // ----------------------------------------------------
-    // 1. Manejo de Eventos (User Input)
-    // ----------------------------------------------------
-
     fun onTitleChange(newTitle: String) {
         _state.value = _state.value.copy(
             title = newTitle,
-            titleError = null // Limpiar el error cuando el usuario escribe
+            titleError = null // Limpiar el error al escribir
         )
     }
 
     fun onPriorityChange(newPriority: String) {
         _state.value = _state.value.copy(priority = newPriority)
     }
+    fun onDescriptionChange(newDescription: String) {
+        _state.value = _state.value.copy(description = newDescription)
+    }
 
+    fun onLocationChange(newLocation: String) {
+        _state.value = _state.value.copy(location = newLocation)
+    }
     // ----------------------------------------------------
     // 2. Lógica de Guardado (IL 2.2)
     // ----------------------------------------------------
@@ -59,8 +62,11 @@ class TaskFormViewModel(
                 // 1. Crear el objeto de Dominio (Task)
                 val taskToSave = Task(
                     title = state.value.title,
+                    description = state.value.description.takeIf { it.isNotBlank() },
+                    location = state.value.location.takeIf { it.isNotBlank() },
                     priority = state.value.priority,
-                    isCompleted = false
+                    isCompleted = false,
+                    reminderTime = null
                 )
 
                 // 2. Ejecutar el Caso de Uso (Aquí ocurre la validación desacoplada)
@@ -72,7 +78,7 @@ class TaskFormViewModel(
                     saveSuccessful = true
                 )
 
-                // ⬇️ Aquí se insertará la lógica de Recursos Nativos (Vibración, Notificación) ⬇️
+                // Aquí se insertará la lógica de Recursos Nativos (Vibración, Notificación)
                 // triggerNativeVibration()
                 // scheduleNativeNotification()
 
