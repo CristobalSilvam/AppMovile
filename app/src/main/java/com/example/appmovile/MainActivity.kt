@@ -10,6 +10,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.appmovile.ui.screens.LoginScreen
 import com.example.appmovile.ui.screens.TaskFormScreen
 import com.example.appmovile.ui.screens.TaskListScreen
 import com.example.appmovile.ui.theme.AppMovileTheme
@@ -26,6 +27,7 @@ import com.example.appmovile.utils.RequestNotificationPermission // Helper de Pe
 
 // Definición de Rutas de Navegación
 object Destinations {
+    const val LOGIN = "login"
     const val TASK_LIST = "task_list"
     const val TASK_FORM = "task_form"
 
@@ -88,8 +90,12 @@ fun MyAppNavigation(appContainer: AppContainer) {
 
     NavHost(
         navController = navController,
-        startDestination = Destinations.TASK_LIST // Punto de inicio (IL 2.1)
+        startDestination = Destinations.LOGIN // Punto de inicio (IL 2.1)
     ) {
+        composable("login") {
+            LoginScreen(navController)
+        }
+
         // Pantalla de Listado (Tasks List)
         composable(Destinations.TASK_LIST) {
             // Inyecta el ViewModel usando la fábrica
