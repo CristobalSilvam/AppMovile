@@ -1,24 +1,47 @@
 package com.example.appmovile.ui.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Checklist // Ícono de ticket/historial
+import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Menu // Importación necesaria para el icono del menú
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalNavigationDrawer // Componente clave
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.appmovile.ui.viewmodels.TaskListViewModel
-import com.example.appmovile.Destinations // Asegúrate de importar Destinations
+import com.example.appmovile.ui.components.DrawerContent
 import com.example.appmovile.ui.theme.PriorityAccentColor
 import com.example.appmovile.ui.theme.PriorityHigh
 import com.example.appmovile.ui.theme.PriorityLow
 import com.example.appmovile.ui.theme.PriorityMedium
+import com.example.appmovile.ui.viewmodels.TaskListViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,50 +52,87 @@ fun TaskListScreen(
 ) {
     val state = viewModel.state.collectAsState().value
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Mis Tareas Pendientes") },
-                actions = {
-                    // BOTÓN HISTORIAL (TICKET)
-                    IconButton(onClick = onNavigateToCompleted) {
-                        Icon(
-                            imageVector = Icons.Filled.Checklist, // Usamos Checklist como "ticket"
-                            contentDescription = "Ver Tareas Completadas"
-                        )
+    // ⬇️ ESTADOS LOCALES para controlar el menú
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
+    // ⬇️ 1. ENVOLVER EL CONTENIDO EN EL DRAWER (SOLUCIÓN)
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            // 2. CONEXIÓN DE LA LÓGICA DEL MENÚ
+            DrawerContent(
+                onOptionClicked = { option ->
+                    scope.launch { drawerState.close() } // ⬅️ Cierra el menú al seleccionar una opción
+
+                    // ⬇️ Lógica de Navegación Local
+                    when (option) {
+                        "Lista de Tareas" -> { /* Ya estás aquí */
+                        }
+
+                        "Tareas Completadas" -> onNavigateToCompleted()
+                        "Agregar Tarea" -> onNavigateToForm()
+                        // La lógica de "Cerrar Sesión" iría aquí
                     }
                 }
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = onNavigateToForm) {
-                Icon(Icons.Filled.Add, contentDescription = "Añadir Tarea")
-            }
         }
-    ) { padding ->
-        if (state.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else {
-            LazyColumn(modifier = Modifier.padding(padding)) {
-                items(state.tasks, key = { it.id }) { task ->
-                    TaskItem(
-                        task = task,
-                        onToggleCompletion = viewModel::toggleTaskCompletion,
-                        onDelete = viewModel::deleteTask
-                    )
+    ) {
+        // 3. SCRAFFOLD ES EL CONTENIDO DE LA PANTALLA PRINCIPAL
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Mis Tareas Pendientes") },
+                    // ⬇️ CONEXIÓN DEL BOTÓN MENÚ para abrir el drawer (SOLUCIÓN)
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(Icons.Filled.Menu, contentDescription = "Abrir Menú Lateral")
+                        }
+                    },
+                    actions = {
+                        // BOTÓN HISTORIAL (TICKET)
+                        IconButton(onClick = onNavigateToCompleted) {
+                            Icon(
+                                imageVector = Icons.Filled.Checklist, // Usamos Checklist como "ticket"
+                                contentDescription = "Ver Tareas Completadas"
+                            )
+                        }
+                    }
+                )
+            },
+            floatingActionButton = {
+                FloatingActionButton(onClick = onNavigateToForm) {
+                    Icon(Icons.Filled.Add, contentDescription = "Añadir Tarea")
                 }
             }
-            if (state.tasks.isEmpty() && !state.isLoading) {
+        ) { padding ->
+            if (state.isLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize().padding(padding),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("¡No tienes tareas pendientes!", style = MaterialTheme.typography.titleMedium)
+                    CircularProgressIndicator()
+                }
+            } else {
+                LazyColumn(modifier = Modifier.padding(padding)) {
+                    items(state.tasks, key = { it.id }) { task ->
+                        TaskItem(
+                            task = task,
+                            onToggleCompletion = viewModel::toggleTaskCompletion,
+                            onDelete = viewModel::deleteTask
+                        )
+                    }
+                }
+                if (state.tasks.isEmpty() && !state.isLoading) {
+                    Box(
+                        modifier = Modifier.fillMaxSize().padding(padding),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "¡No tienes tareas pendientes!",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
                 }
             }
         }
@@ -127,7 +187,7 @@ fun TaskItem(
                 )
                 // Mostrar Prioridad
                 Text(
-                    text = "Prioridad: ${task.priority}" ,
+                    text = "Prioridad: ${task.priority}",
                     style = MaterialTheme.typography.bodySmall,
                     color = PriorityAccentColor
                 )
