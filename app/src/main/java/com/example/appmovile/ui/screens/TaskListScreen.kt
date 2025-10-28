@@ -42,10 +42,12 @@ import com.example.appmovile.ui.theme.PriorityLow
 import com.example.appmovile.ui.theme.PriorityMedium
 import com.example.appmovile.ui.viewmodels.TaskListViewModel
 import kotlinx.coroutines.launch
+import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskListScreen(
+    navController: NavController,
     viewModel: TaskListViewModel,
     onNavigateToForm: () -> Unit,
     onNavigateToCompleted: () -> Unit
@@ -62,6 +64,7 @@ fun TaskListScreen(
         drawerContent = {
             // CONEXIÓN DE LA LÓGICA DEL MENÚ
             DrawerContent(
+                navController = navController,
                 onOptionClicked = { option ->
                     scope.launch { drawerState.close() } // Cierra el menú al seleccionar una opción
 
@@ -72,7 +75,11 @@ fun TaskListScreen(
 
                         "Tareas Completadas" -> onNavigateToCompleted()
                         "Agregar Tarea" -> onNavigateToForm()
-                        // La lógica de "Cerrar Sesión" iría aquí
+                        "Cerrar Sesión" -> {
+                            navController.navigate("login") {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
                     }
                 }
             )

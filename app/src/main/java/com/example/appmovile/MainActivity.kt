@@ -101,6 +101,7 @@ fun MyAppNavigation(appContainer: AppContainer) {
             // Inyecta el ViewModel usando la fábrica
             val viewModel: TaskListViewModel = viewModel(factory = taskListViewModelFactory)
             TaskListScreen(
+                navController = navController,
                 viewModel = viewModel,
                 onNavigateToForm = {
                     navController.navigate(Destinations.TASK_FORM)

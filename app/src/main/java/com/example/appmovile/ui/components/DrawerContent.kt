@@ -20,11 +20,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 
 @Composable
-fun DrawerContent(onOptionClicked: (String) -> Unit) {
+fun DrawerContent(
+    navController: NavController,
+    onOptionClicked: (String) -> Unit) {
     val menuItems = listOf(
-        Pair("Login", Icons.Default.AccountCircle),
         Pair("Lista de Tareas", Icons.Default.Notifications),
         Pair("Tareas Completadas", Icons.Default.Checklist),
         Pair("Agregar Tarea", Icons.Default.Add),
