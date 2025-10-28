@@ -51,49 +51,46 @@ fun TaskListScreen(
     viewModel: TaskListViewModel,
     onNavigateToForm: () -> Unit,
     onNavigateToCompleted: () -> Unit,
-    onViewDetails: (Int) -> Unit
+    onNavigateToAuth: () -> Unit,
+    onViewDetails: (Int) -> Unit,
 ) {
     val state = viewModel.state.collectAsState().value
 
-    // ⬇️ ESTADOS LOCALES para controlar el menú
+    // ESTADOS LOCALES para controlar el menú
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-
-    // ⬇️ 1. ENVOLVER EL CONTENIDO EN EL DRAWER (SOLUCIÓN)
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             // 2. CONEXIÓN DE LA LÓGICA DEL MENÚ
             DrawerContent(
                 onOptionClicked = { option ->
-                    scope.launch { drawerState.close() } // ⬅️ Cierra el menú al seleccionar una opción
+                    scope.launch { drawerState.close() } // Cierra el menú al seleccionar una opción
 
-                    // ⬇️ Lógica de Navegación Local
+                    // Lógica de Navegación Local
                     when (option) {
-                        "Lista de Tareas" -> { /* Ya estás aquí */
-                        }
-
+                        "Login" -> onNavigateToAuth()
+                        "Lista de Tareas" -> {}
                         "Tareas Completadas" -> onNavigateToCompleted()
                         "Agregar Tarea" -> onNavigateToForm()
-                        // La lógica de "Cerrar Sesión" iría aquí
+                        "Cerrar Sesión" -> onNavigateToAuth()
                     }
                 }
             )
         }
     ) {
-        // 3. SCRAFFOLD ES EL CONTENIDO DE LA PANTALLA PRINCIPAL
+        //CONTENIDO DE LA PANTALLA PRINCIPAL
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = { Text("Mis Tareas Pendientes") },
-                    // ⬇️ CONEXIÓN DEL BOTÓN MENÚ para abrir el drawer (SOLUCIÓN)
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
                             Icon(Icons.Filled.Menu, contentDescription = "Abrir Menú Lateral")
                         }
                     },
                     actions = {
-                        // BOTÓN HISTORIAL (TICKET)
+                        // BOTÓN HISTORIAL
                         IconButton(onClick = onNavigateToCompleted) {
                             Icon(
                                 imageVector = Icons.Filled.Checklist, // Usamos Checklist como "ticket"
@@ -154,16 +151,9 @@ fun TaskItem(
     val cardColor = when (task.priority) {
         "ALTA" -> PriorityHigh.copy(alpha = 0.2f) // 20% de opacidad para el fondo
         "MEDIA" -> PriorityMedium.copy(alpha = 0.2f) // 30% de opacidad
-        "BAJA" -> PriorityLow.copy(alpha = 0.2f)
-        else -> MaterialTheme.colorScheme.surface // Color por defecto si no hay prioridad
+        else -> PriorityLow.copy(alpha = 0.2f)
     }
 
-    // 2. Determinar el color de acento/texto (más oscuro)
-    val priorityAccentColor = when (task.priority) {
-        "ALTA" -> PriorityHigh
-        "MEDIA" -> PriorityMedium
-        else -> PriorityLow
-    }
     Card(
         modifier = Modifier
             .fillMaxWidth()

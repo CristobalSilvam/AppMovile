@@ -29,8 +29,13 @@ import com.example.appmovile.ui.viewmodels.TaskDetailViewModelFactory
 import com.example.appmovile.utils.createNotificationChannel // Helper de Notificación
 import com.example.appmovile.utils.RequestNotificationPermission // Helper de Permiso
 
+import com.example.appmovile.ui.screens.AuthScreen
+import com.example.appmovile.ui.viewmodels.AuthViewModel
+import com.example.appmovile.ui.viewmodels.AuthViewModelFactory
+
 // Definición de Rutas de Navegación
 object Destinations {
+    const val AUTH = "auth"
     const val TASK_LIST = "task_list"
     const val TASK_FORM = "task_form"
 
@@ -67,10 +72,10 @@ class MainActivity : ComponentActivity() {
 fun MyAppNavigation(appContainer: AppContainer) {
     val navController = rememberNavController()
 
-    // Recurso Nativo: Solicita el permiso POST_NOTIFICATIONS (IL 2.4)
+    // Recurso Nativo: Solicita el permiso POST_NOTIFICATIONS
     RequestNotificationPermission()
 
-    // 1. Inicialización de Fábricas (Se hace solo una vez gracias a remember)
+    // Inicialización de Fábricas
 
     // Fábrica de Listado (Inyecta Obtener, Borrar, y Actualizar Estado)
     val taskListViewModelFactory = remember {
@@ -93,10 +98,16 @@ fun MyAppNavigation(appContainer: AppContainer) {
             getCompletedTasksUseCase = appContainer.getCompletedTasksUseCase
         )
     }
+    val authViewModelFactory = remember {
+        AuthViewModelFactory(
+            registerUserUseCase = appContainer.registerUserUseCase,
+            loginUserUseCase = appContainer.loginUserUseCase
+        )
+    }
 
     NavHost(
         navController = navController,
-        startDestination = Destinations.TASK_LIST // Punto de inicio (IL 2.1)
+        startDestination = Destinations.AUTH // Punto de inicio (IL 2.1)
     ) {
         // Pantalla de Listado (Tasks List)
         composable(Destinations.TASK_LIST) {
@@ -106,9 +117,8 @@ fun MyAppNavigation(appContainer: AppContainer) {
                 viewModel = viewModel,
                 onNavigateToForm = {navController.navigate(Destinations.TASK_FORM)},
                 onNavigateToCompleted = { navController.navigate(Destinations.COMPLETED_TASKS) },
-                onViewDetails = { taskId ->
-                    // Navega a la ruta de detalle pasando el ID
-                    navController.navigate(Destinations.taskDetailRoute(taskId))
+                onNavigateToAuth = { navController.navigate(Destinations.AUTH) },
+                onViewDetails = { taskId -> navController.navigate(Destinations.taskDetailRoute(taskId))
                 }
             )
         }
@@ -135,7 +145,7 @@ fun MyAppNavigation(appContainer: AppContainer) {
                 onNavigateBack = { navController.popBackStack() }
             )
         }
-
+        //detalles
         composable(
             route = Destinations.TASK_DETAIL,
             arguments = listOf(navArgument("taskId") { type = NavType.IntType })
@@ -156,6 +166,19 @@ fun MyAppNavigation(appContainer: AppContainer) {
             TaskDetailScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        //login
+        composable(Destinations.AUTH) {
+            val viewModel: AuthViewModel = viewModel(factory = authViewModelFactory)
+            AuthScreen(
+                viewModel = viewModel,
+                onAuthSuccess = {
+                    // Navega a la lista principal y limpia la pila de atrás
+                    navController.navigate(Destinations.TASK_LIST) {
+                        popUpTo(Destinations.AUTH) { inclusive = true } // Evita volver al login con el botón 'atrás'
+                    }
+                }
             )
         }
     }
