@@ -13,7 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Menu // Importación necesaria para el icono del menú
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -24,7 +24,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalNavigationDrawer // Componente clave
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -52,20 +52,20 @@ fun TaskListScreen(
 ) {
     val state = viewModel.state.collectAsState().value
 
-    // ⬇️ ESTADOS LOCALES para controlar el menú
+    // ESTADOS LOCALES para controlar el menú
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-    // ⬇️ 1. ENVOLVER EL CONTENIDO EN EL DRAWER (SOLUCIÓN)
+    //ENVOLVER EL CONTENIDO EN EL DRAWER
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            // 2. CONEXIÓN DE LA LÓGICA DEL MENÚ
+            // CONEXIÓN DE LA LÓGICA DEL MENÚ
             DrawerContent(
                 onOptionClicked = { option ->
-                    scope.launch { drawerState.close() } // ⬅️ Cierra el menú al seleccionar una opción
+                    scope.launch { drawerState.close() } // Cierra el menú al seleccionar una opción
 
-                    // ⬇️ Lógica de Navegación Local
+                    // Lógica de Navegación Local
                     when (option) {
                         "Lista de Tareas" -> { /* Ya estás aquí */
                         }
@@ -78,22 +78,22 @@ fun TaskListScreen(
             )
         }
     ) {
-        // 3. SCRAFFOLD ES EL CONTENIDO DE LA PANTALLA PRINCIPAL
+        // CONTENIDO DE LA PANTALLA PRINCIPAL
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = { Text("Mis Tareas Pendientes") },
-                    // ⬇️ CONEXIÓN DEL BOTÓN MENÚ para abrir el drawer (SOLUCIÓN)
+                    // CONEXIÓN DEL BOTÓN MENÚ
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
                             Icon(Icons.Filled.Menu, contentDescription = "Abrir Menú Lateral")
                         }
                     },
                     actions = {
-                        // BOTÓN HISTORIAL (TICKET)
+                        // BOTÓN HISTORIAL
                         IconButton(onClick = onNavigateToCompleted) {
                             Icon(
-                                imageVector = Icons.Filled.Checklist, // Usamos Checklist como "ticket"
+                                imageVector = Icons.Filled.Checklist,
                                 contentDescription = "Ver Tareas Completadas"
                             )
                         }
@@ -149,11 +149,10 @@ fun TaskItem(
     val cardColor = when (task.priority) {
         "ALTA" -> PriorityHigh.copy(alpha = 0.2f) // 20% de opacidad para el fondo
         "MEDIA" -> PriorityMedium.copy(alpha = 0.2f) // 30% de opacidad
-        "BAJA" -> PriorityLow.copy(alpha = 0.2f)
-        else -> MaterialTheme.colorScheme.surface // Color por defecto si no hay prioridad
+        else -> PriorityLow.copy(alpha = 0.2f)
     }
 
-    // 2. Determinar el color de acento/texto (más oscuro)
+    // 2. Determinar el color de acento/texto
     val priorityAccentColor = when (task.priority) {
         "ALTA" -> PriorityHigh
         "MEDIA" -> PriorityMedium
