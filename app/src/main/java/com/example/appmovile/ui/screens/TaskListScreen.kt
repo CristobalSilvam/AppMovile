@@ -62,7 +62,7 @@ fun TaskListScreen(
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            // 2. CONEXIÓN DE LA LÓGICA DEL MENÚ
+            // CONEXIÓN DE LA LÓGICA DEL MENÚ
             DrawerContent(
                 onOptionClicked = { option ->
                     scope.launch { drawerState.close() } // Cierra el menú al seleccionar una opción
@@ -93,7 +93,7 @@ fun TaskListScreen(
                         // BOTÓN HISTORIAL
                         IconButton(onClick = onNavigateToCompleted) {
                             Icon(
-                                imageVector = Icons.Filled.Checklist, // Usamos Checklist como "ticket"
+                                imageVector = Icons.Filled.Checklist,
                                 contentDescription = "Ver Tareas Completadas"
                             )
                         }

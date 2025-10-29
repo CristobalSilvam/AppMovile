@@ -8,17 +8,13 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import androidx.core.content.ContextCompat.getSystemService
-import com.example.appmovile.R // Requiere un recurso en res/drawable, como un ícono
-import com.example.appmovile.MainActivity // Clase principal para abrir al tocar
+import com.example.appmovile.MainActivity
+import com.example.appmovile.R
 
 const val CHANNEL_ID = "task_reminder_channel"
 const val CHANNEL_NAME = "Recordatorios de Tareas"
 
-/**
- * Crea el canal de notificación. Obligatorio para Android 8.0 (API 26) y superior.
- * Esto debe llamarse al inicio de la aplicación (ej., en MainActivity.onCreate).
- */
+
 fun createNotificationChannel(context: Context) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         val importance = NotificationManager.IMPORTANCE_HIGH
@@ -31,11 +27,7 @@ fun createNotificationChannel(context: Context) {
     }
 }
 
-/**
- * Muestra una notificación simple para recordar una tarea.
- * @param taskId El ID de la tarea, usado como ID de la notificación para permitir la actualización.
- * @param title El título de la tarea a mostrar en el cuerpo de la notificación.
- */
+
 fun showSimpleNotification(context: Context, taskId: Int, title: String) {
     val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -51,7 +43,6 @@ fun showSimpleNotification(context: Context, taskId: Int, title: String) {
     )
 
     val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-        // ⬇️ Necesitas tener un archivo R.drawable.ic_notification.xml en res/drawable
         .setSmallIcon(R.drawable.ic_notification)
         .setContentTitle("¡Tarea Pendiente!")
         .setContentText(title)

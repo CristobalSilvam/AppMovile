@@ -38,9 +38,7 @@ object Destinations {
     const val AUTH = "auth"
     const val TASK_LIST = "task_list"
     const val TASK_FORM = "task_form"
-
     const val COMPLETED_TASKS = "completed_tasks"
-
     const val TASK_DETAIL = "task_detail/{taskId}"
     fun taskDetailRoute(taskId: Int) = "task_detail/$taskId"
 }
@@ -107,7 +105,7 @@ fun MyAppNavigation(appContainer: AppContainer) {
 
     NavHost(
         navController = navController,
-        startDestination = Destinations.AUTH // Punto de inicio (IL 2.1)
+        startDestination = Destinations.TASK_LIST // Punto de inicio
     ) {
         // Pantalla de Listado (Tasks List)
         composable(Destinations.TASK_LIST) {
@@ -178,7 +176,8 @@ fun MyAppNavigation(appContainer: AppContainer) {
                     navController.navigate(Destinations.TASK_LIST) {
                         popUpTo(Destinations.AUTH) { inclusive = true } // Evita volver al login con el botón 'atrás'
                     }
-                }
+                },
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

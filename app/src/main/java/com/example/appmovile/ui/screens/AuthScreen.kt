@@ -8,9 +8,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -31,7 +35,8 @@ import com.example.appmovile.ui.viewmodels.AuthViewModel
 @Composable
 fun AuthScreen(
     viewModel: AuthViewModel, // Recibe el ViewModel inyectado
-    onAuthSuccess: () -> Unit // Callback para navegar a la lista de tareas
+    onAuthSuccess: () -> Unit, // Callback para navegar a la lista de tareas
+    onNavigateBack: () -> Unit
 ) {
     val state = viewModel.state.collectAsState().value
 
@@ -45,8 +50,15 @@ fun AuthScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (state.isRegistering) "Crear Cuenta" else "Iniciar Sesión") }
-                // Podrías añadir un botón de regreso si vienes de otra pantalla
+                title = { Text(if (state.isRegistering) "Crear Cuenta" else "Iniciar Sesión") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) { // Llama al callback de regreso
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack, // Ícono estándar de regreso
+                            contentDescription = "Volver"
+                        )
+                    }
+                }
             )
         }
     ) { padding ->

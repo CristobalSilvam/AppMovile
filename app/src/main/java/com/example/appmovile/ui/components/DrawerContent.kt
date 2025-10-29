@@ -1,4 +1,3 @@
-// ui/components/DrawerContent.kt
 package com.example.appmovile.ui.components
 
 import androidx.compose.foundation.layout.Column
@@ -55,8 +54,6 @@ fun DrawerContent(onOptionClicked: (String) -> Unit) {
 
             Spacer(modifier = Modifier.weight(1f)) // Empuja el contenido inferior hacia abajo
 
-            // Opción de Cerrar Sesión (Si no está en el menú principal)
-            // Ya está incluida arriba, pero puedes separarla aquí si lo deseas.
         }
     }
 }

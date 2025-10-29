@@ -30,7 +30,7 @@ interface AppContainer {
     val updateTaskStatusUseCase: UpdateTaskStatusUseCase
     val getCompletedTasksUseCase: GetCompletedTasksUseCase
     val getTaskDetailsUseCase: GetTaskDetailsUseCase
-    val registerUserUseCase: RegisterUserUseCase // ⬅️ NUEVO: Use Case de Registro
+    val registerUserUseCase: RegisterUserUseCase
     val loginUserUseCase: LoginUserUseCase
 }
 
