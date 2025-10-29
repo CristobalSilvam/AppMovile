@@ -29,12 +29,14 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.appmovile.domain.models.Task
 import com.example.appmovile.ui.components.DrawerContent
@@ -97,7 +99,12 @@ fun TaskListScreen(
                                 contentDescription = "Ver Tareas Completadas"
                             )
                         }
-                    }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color(0xFFADD8E6), // Celeste claro
+
+                        titleContentColor = Color.Black
+                    )
                 )
             },
             floatingActionButton = {
