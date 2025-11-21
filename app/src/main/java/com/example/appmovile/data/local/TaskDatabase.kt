@@ -6,7 +6,7 @@ import com.example.appmovile.data.local.models.TaskEntity
 import com.example.appmovile.data.local.models.UserEntity
 
 // Define las entidades y la versión de la base de datos
-@Database(entities = [TaskEntity::class, UserEntity::class], version = 5, exportSchema = false)
+@Database(entities = [TaskEntity::class, UserEntity::class], version = 6, exportSchema = false)
 abstract class TaskDatabase : RoomDatabase() {
 
     // Abstracta para exponer el DAO

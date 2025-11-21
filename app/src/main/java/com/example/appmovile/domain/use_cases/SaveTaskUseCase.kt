@@ -8,14 +8,10 @@ class SaveTaskUseCase(
     // Depende de la interfaz TaskRepository (contrato de negocio)
     private val repository: TaskRepository
 ) {
-    /**
-     * Ejecuta la lógica de validación y guarda la tarea.
-     * @param task El modelo de dominio a validar y guardar.
-     * @throws IllegalArgumentException si la validación falla.
-     */
+
     suspend operator fun invoke(task: Task) {
 
-        // ⬇️ LÓGICA DE VALIDACIÓN (Desacoplada de la UI y ViewModel)
+        // LÓGICA DE VALIDACIÓN
         if (task.title.isBlank()) {
             throw IllegalArgumentException("El título de la tarea no puede estar vacío.")
         }

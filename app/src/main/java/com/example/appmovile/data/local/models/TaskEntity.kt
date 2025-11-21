@@ -11,7 +11,7 @@ data class TaskEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val title: String,
-    @ColumnInfo(name = "Descriptión") val description: String? = null, // Opcional
+    @ColumnInfo(name = "Description") val description: String? = null, // Opcional
     @ColumnInfo(name = "Location") val location: String? = null,
     val priority: String, // ALTA, MEDIA, BAJA
     @ColumnInfo(name = "is_completed") val isCompleted: Boolean,

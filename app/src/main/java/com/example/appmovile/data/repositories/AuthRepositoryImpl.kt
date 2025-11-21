@@ -1,44 +1,57 @@
 package com.example.appmovile.data.repositories
 
-import com.example.appmovile.data.local.AuthDao
-import com.example.appmovile.data.local.models.UserEntity
+// 1. Quita la importación del DAO
+// import com.example.appmovile.data.local.AuthDao
+// 2. Importa el servicio de API y los DTOs
+import com.example.appmovile.data.remote.AuthApiService
+import com.example.appmovile.data.remote.dto.LoginRequest
+import com.example.appmovile.data.remote.dto.RegisterRequest
 import com.example.appmovile.domain.models.User
 import com.example.appmovile.domain.repositories.AuthRepository
 
-
-class AuthRepositoryImpl (
-    private val authDao: AuthDao
+class AuthRepositoryImpl(
+    // 3. ⬇️ Cambia la dependencia del constructor
+    // private val authDao: AuthDao // <-- SE VA
+    private val authApiService: AuthApiService // <-- LLEGA
 ) : AuthRepository {
 
-    // Almacenamiento simple en memoria para la sesión del usuario actual
-    private var currentUserEmail: String? = null
+    private var currentUserEmail: String? = null // Mantenemos la sesión en memoria
 
     override suspend fun register(email: String, passwordHash: String) {
-        val userEntity = UserEntity(email = email, passwordHash = passwordHash)
-        authDao.registerUser(userEntity)
-        // Iniciar sesión automáticamente después del registro
-        currentUserEmail = email
-    }
-
-    override suspend fun login(email: String, passwordHash: String): User? {
-        val userEntity = authDao.findUserByEmail(email)
-        // Verificación simple de contraseña
-        return if (userEntity != null && userEntity.passwordHash == passwordHash) {
-            currentUserEmail = userEntity.email // Establecer usuario actual si el login es exitoso
-            User(email = userEntity.email) // Devuelve el modelo User limpio
-        } else {
-            currentUserEmail = null // Limpiar usuario actual si el login falla
-            null // Devuelve null si falla
+        val request = RegisterRequest(email, passwordHash, passwordHash) // Asumimos DTO
+        try {
+            // 4. Llama a la API (Retrofit) en lugar del DAO
+            authApiService.register(request)
+            currentUserEmail = email // Auto-login
+        } catch (e: Exception) {
+            // Manejar error de red o 400 Bad Request
+            throw IllegalArgumentException("Error al registrar: ${e.message}")
         }
     }
 
-    override suspend fun getCurrentUserEmail(): String? {
-        // Devuelve el email almacenado en memoria
-        return currentUserEmail
+    override suspend fun login(email: String, passwordHash: String): User? {
+        val request = LoginRequest(email, passwordHash)
+        return try {
+            // 5. Llama a la API
+            val response = authApiService.login(request)
+
+            // 6. Si tiene éxito (no hay excepción)
+            currentUserEmail = response.email
+            // Aquí guardarías el response.token en SharedPreferences/DataStore
+            User(email = response.email)
+        } catch (e: Exception) {
+            // Si Retrofit lanza una excepción (ej. 401 Unauthorized), el login falla
+            currentUserEmail = null
+            null
+        }
     }
 
     override suspend fun logout() {
-        // Limpia la sesión del usuario actual
         currentUserEmail = null
+        // Aquí también borrarías el token guardado
+    }
+
+    override suspend fun getCurrentUserEmail(): String? {
+        return currentUserEmail
     }
 }

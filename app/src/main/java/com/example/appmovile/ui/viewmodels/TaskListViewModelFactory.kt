@@ -5,12 +5,14 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.appmovile.domain.use_cases.DeleteTaskUseCase
 import com.example.appmovile.domain.use_cases.GetTaskUseCase
 import com.example.appmovile.domain.use_cases.UpdateTaskStatusUseCase
+import com.example.appmovile.domain.use_cases.GetWeatherUseCase
 import java.lang.IllegalArgumentException
 
 class TaskListViewModelFactory(
     private val getTaskUseCase: GetTaskUseCase,
     private val deleteTaskUseCase: DeleteTaskUseCase,
-    private val updateTaskStatusUseCase: UpdateTaskStatusUseCase
+    private val updateTaskStatusUseCase: UpdateTaskStatusUseCase,
+    private val getWeatherUseCase: GetWeatherUseCase
 ) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -20,7 +22,8 @@ class TaskListViewModelFactory(
             return TaskListViewModel(
                 getTaskUseCase,
                 deleteTaskUseCase,
-                updateTaskStatusUseCase
+                updateTaskStatusUseCase,
+                getWeatherUseCase
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

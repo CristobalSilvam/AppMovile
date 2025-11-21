@@ -1,12 +1,12 @@
 package com.example.appmovile.domain.use_cases
 
-import com.example.appmovile.domain.repositories.TaskRepository
 import com.example.appmovile.domain.models.Task
+import com.example.appmovile.domain.repositories.TaskRepository
 
-class UpdateTaskStatusUseCase(private val repository: TaskRepository) {
-
+class UpdateTaskStatusUseCase(
+    private val repository: TaskRepository
+) {
     suspend operator fun invoke(task: Task, isCompleted: Boolean) {
-        val updatedTask = task.copy(isCompleted = isCompleted)
-        repository.saveTask(updatedTask)
+        repository.updateTaskStatus(task, isCompleted)
     }
 }

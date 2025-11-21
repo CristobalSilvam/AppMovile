@@ -1,7 +1,7 @@
 package com.example.appmovile.domain.repositories
 
 import kotlinx.coroutines.flow.Flow
-import com.example.appmovile.domain.models.Task // Importa el modelo de dominio limpio
+import com.example.appmovile.domain.models.Task
 
 interface   TaskRepository {
 
@@ -15,5 +15,7 @@ interface   TaskRepository {
     suspend fun deleteTask(taskId: Int)
 
     //vista especificacion
-    suspend fun getTaskById(id: Int): Task? //
+    suspend fun getTaskById(id: Int): Task?
+
+    suspend fun updateTaskStatus(task: Task, isCompleted: Boolean)
 }

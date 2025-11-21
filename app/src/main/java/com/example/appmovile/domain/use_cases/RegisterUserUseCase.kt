@@ -5,7 +5,7 @@ import java.lang.IllegalArgumentException
 
 class RegisterUserUseCase(private val repository: AuthRepository) {
     suspend operator fun invoke(email: String, password: String, confirmPassword: String) {
-        // VALIDACIÓN DE CAMPOS (IL 2.1 y IL 2.2)
+        // VALIDACIÓN DE CAMPOS
         if (email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
             throw IllegalArgumentException("Todos los campos son obligatorios.")
         }

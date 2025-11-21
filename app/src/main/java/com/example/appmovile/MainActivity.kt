@@ -80,7 +80,8 @@ fun MyAppNavigation(appContainer: AppContainer) {
         TaskListViewModelFactory(
             getTaskUseCase = appContainer.getTaskUseCase,
             deleteTaskUseCase = appContainer.deleteTaskUseCase,
-            updateTaskStatusUseCase = appContainer.updateTaskStatusUseCase
+            updateTaskStatusUseCase = appContainer.updateTaskStatusUseCase,
+            getWeatherUseCase = appContainer.getWeatherUseCase
         )
     }
 

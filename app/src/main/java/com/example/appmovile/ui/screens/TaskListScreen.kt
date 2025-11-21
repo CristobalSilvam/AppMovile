@@ -33,7 +33,11 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,6 +50,12 @@ import com.example.appmovile.ui.theme.PriorityLow
 import com.example.appmovile.ui.theme.PriorityMedium
 import com.example.appmovile.ui.viewmodels.TaskListViewModel
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.filled.Sort // Ícono de Ordenar
+import androidx.compose.material.icons.filled.FilterList // Ícono de Filtrar
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,6 +68,9 @@ fun TaskListScreen(
 ) {
     val state = viewModel.state.collectAsState().value
 
+    var expanded by remember { mutableStateOf(false) }
+    val priorities = listOf("TODAS", "ALTA", "MEDIA", "BAJA")
+
     // ESTADOS LOCALES para controlar el menú
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -68,7 +81,6 @@ fun TaskListScreen(
             DrawerContent(
                 onOptionClicked = { option ->
                     scope.launch { drawerState.close() } // Cierra el menú al seleccionar una opción
-
                     // Lógica de Navegación Local
                     when (option) {
                         "Login" -> onNavigateToAuth()
@@ -77,7 +89,8 @@ fun TaskListScreen(
                         "Agregar Tarea" -> onNavigateToForm()
                         "Cerrar Sesión" -> onNavigateToAuth()
                     }
-                }
+                },
+                weatherState = state.weatherState
             )
         }
     ) {
@@ -92,6 +105,46 @@ fun TaskListScreen(
                         }
                     },
                     actions = {
+                        // 1. BOTÓN DE ORDENAR POR PRIORIDAD
+                        IconButton(onClick = viewModel::toggleSortByPriority) {
+                            Icon(
+                                imageVector = Icons.Filled.Sort,
+                                contentDescription = "Ordenar por Prioridad",
+                                // Resalta si el ordenamiento está activo (IL 2.2)
+                                tint = if (state.isSortedByPriority) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        // 2. BOTÓN DE FILTRAR (Menú Desplegable)
+                        Box {
+                            IconButton(onClick = { expanded = true }) {
+                                Icon(
+                                    imageVector = Icons.Filled.FilterList,
+                                    contentDescription = "Filtrar por Prioridad",
+                                    // Resalta si hay un filtro activo (no es 'TODAS')
+                                    tint = if (state.filterPriority != "TODAS") MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            DropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false }
+                            ) {
+                                priorities.forEach { priority ->
+                                    DropdownMenuItem(
+                                        text = { Text(priority) },
+                                        onClick = {
+                                            viewModel.setFilterPriority(priority) // ⬅️ Llama a la función de filtrado
+                                            expanded = false // Cierra el menú
+                                        },
+                                        // Muestra un check en el elemento seleccionado
+                                        trailingIcon = if (state.filterPriority == priority) {
+                                            { Icon(Icons.Filled.Check, contentDescription = "Seleccionado") }
+                                        } else null
+                                    )
+                                }
+                            }
+                        } // Fin del Box para el Dropdown
                         // BOTÓN HISTORIAL
                         IconButton(onClick = onNavigateToCompleted) {
                             Icon(
@@ -175,7 +228,7 @@ fun TaskItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Checkbox para completar/descompletar
+            // Checkbox para completar
             Checkbox(
                 checked = task.isCompleted,
                 onCheckedChange = { onToggleCompletion(task) }

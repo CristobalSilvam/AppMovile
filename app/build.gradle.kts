@@ -62,13 +62,16 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
 
     // La librería principal de Room
-    implementation("androidx.room:room-runtime:2.8.3") // (Versión actual, verifica la última)
-
-    // Necesario para las Corrutinas de Kotlin (si usarás Coroutines, lo cual es muy recomendado)
+    implementation("androidx.room:room-runtime:2.8.3")
+    // Necesario para las Corrutinas de Kotlin
     implementation("androidx.room:room-ktx:2.8.3")
-
-    // ⬇️ El Procesador de Anotaciones de Room DEBE usarse con 'kapt'
     kapt("androidx.room:room-compiler:2.8.3")
+
+    // --- Dependencias de Retrofit (Para Red) ---
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+// Interceptor (OkHttp)
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
 
     implementation(libs.androidx.navigation.compose.v274)
 }
