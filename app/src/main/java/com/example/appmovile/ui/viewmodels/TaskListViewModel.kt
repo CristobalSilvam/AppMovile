@@ -126,6 +126,7 @@ class TaskListViewModel(
         viewModelScope.launch {
             try {
                 updateTaskStatusUseCase(task, !task.isCompleted)
+                getTaskUseCase()
             } catch (e: Exception) { /* Manejo de errores */ }
         }
     }
@@ -134,6 +135,7 @@ class TaskListViewModel(
         viewModelScope.launch {
             try {
                 deleteTaskUseCase(taskId)
+                getTaskUseCase()
             } catch (e: Exception) { /* Manejo de errores */ }
         }
     }

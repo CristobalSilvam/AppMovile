@@ -1,5 +1,7 @@
 package com.example.appmovile.ui.screens
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -55,6 +57,7 @@ import androidx.compose.material.icons.filled.FilterList // Ícono de Filtrar
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.ui.graphics.graphicsLayer
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -74,6 +77,14 @@ fun TaskListScreen(
     // ESTADOS LOCALES para controlar el menú
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+
+    // ---------- Estado para animación de icono de historial ----------
+    var scaleTrigger by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (scaleTrigger) 1.5f else 1f,
+        animationSpec = tween(durationMillis = 300)
+    )
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -146,7 +157,13 @@ fun TaskListScreen(
                             }
                         } // Fin del Box para el Dropdown
                         // BOTÓN HISTORIAL
-                        IconButton(onClick = onNavigateToCompleted) {
+                        IconButton(
+                            onClick = onNavigateToCompleted,
+                            modifier = Modifier.graphicsLayer {
+                                scaleX = scale
+                                scaleY = scale
+                            }
+                        ) {
                             Icon(
                                 imageVector = Icons.Filled.Checklist,
                                 contentDescription = "Ver Tareas Completadas"
@@ -178,7 +195,18 @@ fun TaskListScreen(
                     items(state.tasks, key = { it.id }) { task ->
                         TaskItem(
                             task = task,
-                            onToggleCompletion = viewModel::toggleTaskCompletion,
+                            onToggleCompletion = { t ->
+                                viewModel.toggleTaskCompletion(t)
+
+                                // Disparar animación solo si la tarea se marca como completada
+                                if (!t.isCompleted) {
+                                    scaleTrigger = true
+                                    scope.launch {
+                                        kotlinx.coroutines.delay(300)
+                                        scaleTrigger = false
+                                    }
+                                }
+                            },
                             onDelete = viewModel::deleteTask,
                             onViewDetails = onViewDetails
                         )

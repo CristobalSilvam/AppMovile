@@ -15,6 +15,11 @@ class TaskRepositoryImpl(
     private val taskApiService: TaskApiService
 ) : TaskRepository {
 
+    // --- Estado interno reactivo de tareas ---
+    private val _tasksFlow = kotlinx.coroutines.flow.MutableStateFlow<List<Task>>(emptyList())
+    val tasksFlow: kotlinx.coroutines.flow.StateFlow<List<Task>> = _tasksFlow
+
+
     // --- Mapeador simple de DTO (Respuesta) a Modelo de Dominio ---
     private fun TaskResponse.toDomain(): Task {
         return Task(
@@ -28,23 +33,19 @@ class TaskRepositoryImpl(
         )
     }
 
-    // --- Implementaciones de API ---
-
-    override fun getAllTasks(): kotlinx.coroutines.flow.Flow<List<Task>> {
-        // Retrofit (suspend) no devuelve un Flow directamente como Room.
-        // Para una implementación simple, usamos flow { ... }
-        return kotlinx.coroutines.flow.flow {
-            try {
-                // 4. Llama a la API
-                val taskResponses = taskApiService.getAllTasks()
-                // 5. Mapea la respuesta
-                emit(taskResponses.map { it.toDomain() })
-            } catch (e: Exception) {
-                // En caso de error de red, emite lista vacía
-                emit(emptyList())
-            }
+    // --- Función para refrescar tareas desde el backend (FALTA AGREGAR) ---
+    private suspend fun refreshTasks() {
+        try {
+            val taskResponses = taskApiService.getAllTasks()
+            _tasksFlow.value = taskResponses.map { it.toDomain() }
+        } catch (e: Exception) {
+            _tasksFlow.value = emptyList() // En caso de error
         }
     }
+
+    // --- Implementaciones de API ---
+
+    override fun getAllTasks(): kotlinx.coroutines.flow.StateFlow<List<Task>> = tasksFlow
 
     override suspend fun saveTask(task: Task) {
         // 6. Crea el DTO de Request para la API
@@ -56,6 +57,7 @@ class TaskRepositoryImpl(
         )
         try {
             taskApiService.createTask(request)
+            refreshTasks()
         } catch (e: Exception) {
             // Manejar error
         }
@@ -72,6 +74,7 @@ class TaskRepositoryImpl(
         )
         try {
             taskApiService.updateTask(task.id.toLong(), request)
+            refreshTasks()
         } catch (e: Exception) {
             // Manejar error
         }
@@ -80,6 +83,7 @@ class TaskRepositoryImpl(
     override suspend fun deleteTask(taskId: Int) {
         try {
             taskApiService.deleteTask(taskId.toLong())
+            refreshTasks()
         } catch (e: Exception) {
             // Manejar error
         }
