@@ -55,6 +55,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.material.icons.filled.Sort // Ícono de Ordenar
 import androidx.compose.material.icons.filled.FilterList // Ícono de Filtrar
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Reorder
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.ui.graphics.graphicsLayer
@@ -118,11 +119,23 @@ fun TaskListScreen(
                     actions = {
                         // 1. BOTÓN DE ORDENAR POR PRIORIDAD
                         IconButton(onClick = viewModel::toggleSortByPriority) {
+
+                            val icon = if (state.isSortedByPriority) {
+                                Icons.Filled.Sort  // Ícono cuando está ORDENADO
+                            } else {
+                                Icons.Filled.Reorder              // Ícono cuando está DESORDENADO
+                            }
+
                             Icon(
-                                imageVector = Icons.Filled.Sort,
-                                contentDescription = "Ordenar por Prioridad",
-                                // Resalta si el ordenamiento está activo (IL 2.2)
-                                tint = if (state.isSortedByPriority) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                imageVector = icon,
+                                contentDescription = if (state.isSortedByPriority)
+                                    "Ordenado por prioridad"
+                                else
+                                    "Sin ordenar por prioridad",
+                                tint = if (state.isSortedByPriority)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
 
