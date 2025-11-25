@@ -1,6 +1,8 @@
 package com.example.appmovile.ui.screens
 
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.repeatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -58,7 +60,9 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Reorder
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.graphicsLayer
+import kotlinx.coroutines.delay
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -255,6 +259,27 @@ fun TaskItem(
         else -> PriorityLow.copy(alpha = 0.2f)
     }
 
+    // Animación SHAKE del botón eliminar
+    var isShaking by remember { mutableStateOf(false) }
+
+    val shakeAngle by animateFloatAsState(
+        targetValue = if (isShaking) 10f else 0f,
+        animationSpec = repeatable(
+            iterations = 10,          // número de sacudidas
+            animation = tween(50),    // velocidad de cada sacudida
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+
+    // Ejecuta la eliminación después del shake
+    LaunchedEffect(isShaking) {
+        if (isShaking) {
+            delay(500)
+            isShaking = false
+            onDelete(task.id)
+        }
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -290,8 +315,14 @@ fun TaskItem(
             }
             //Boton Detalles
             IconButton(onClick = { onViewDetails(task.id) }) { Icon(Icons.Filled.Details, contentDescription = "Eliminar" ) }
-            // Botón de eliminar
-            IconButton(onClick = { onDelete(task.id) }) {
+
+            // Botón eliminar con shake
+            IconButton(
+                onClick = { isShaking = true },
+                modifier = Modifier.graphicsLayer {
+                    rotationZ = shakeAngle
+                }
+            ) {
                 Icon(Icons.Filled.Delete, contentDescription = "Eliminar")
             }
         }
