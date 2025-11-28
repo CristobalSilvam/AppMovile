@@ -54,6 +54,40 @@ class TaskListViewModelTest {
     }
 
     @Test
+    fun `addTask actualiza la lista de tareas`() = runTest {
+
+        // Flow inicial con 1 tarea
+        val taskFlow = MutableStateFlow(
+            listOf(Task(1, "Tarea inicial", "Desc", "Casa", "ALTA", false, null))
+        )
+
+        // Mock del use case que obtiene tareas
+        coEvery { getTaskUseCase() } returns taskFlow
+
+        // Crear el ViewModel DESPUÉS del mock
+        val viewModel = TaskListViewModel(
+            getTaskUseCase,
+            deleteTaskUseCase,
+            updateTaskStatusUseCase,
+            getWeatherUseCase
+        )
+
+        // Simulación de "agregar tarea" sin addTask():
+        val newTask = Task(2, "Nueva tarea", "Desc2", "Trabajo", "MEDIA", false, null)
+        taskFlow.value = taskFlow.value + newTask
+
+        // Verificar estado con Turbine
+        viewModel.state.test {
+            skipItems(1)   // Estado inicial
+            val state = awaitItem()
+
+            assert(state.tasks.size == 2)
+            assert(state.tasks.any { it.id == 2 })
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `getTasks carga tareas correctamente`() = runTest {
 
         val fakeTasks = listOf(
@@ -93,7 +127,7 @@ class TaskListViewModelTest {
             taskFlow.value = taskFlow.value.filter { it.id != id }
         }
 
-        // 🔹 Crear ViewModel después de configurar mocks
+        // Crear ViewModel después de configurar mocks
         val viewModel = TaskListViewModel(
             getTaskUseCase,
             deleteTaskUseCase,
@@ -132,7 +166,7 @@ class TaskListViewModelTest {
             }
         }
 
-        // 🔹 Crear ViewModel después de configurar mocks
+        // Crear ViewModel después de configurar mocks
         val viewModel = TaskListViewModel(
             getTaskUseCase,
             deleteTaskUseCase,
