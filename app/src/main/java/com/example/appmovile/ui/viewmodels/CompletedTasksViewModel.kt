@@ -5,10 +5,12 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.appmovile.domain.models.Task
 import com.example.appmovile.domain.use_cases.GetCompletedTasksUseCase
+import com.example.appmovile.domain.use_cases.UpdateTaskStatusUseCase
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import java.lang.IllegalArgumentException
 
 // Estado de la UI (reutilizamos la estructura de TaskListState si es posible)
@@ -18,7 +20,8 @@ data class CompletedTasksState(
 )
 
 class CompletedTasksViewModel(
-    private val getCompletedTasksUseCase: GetCompletedTasksUseCase
+    private val getCompletedTasksUseCase: GetCompletedTasksUseCase,
+    private val updateTaskStatusUseCase: UpdateTaskStatusUseCase // Añadido
 ) : ViewModel() {
 
     val state: StateFlow<CompletedTasksState> = getCompletedTasksUseCase()
@@ -33,17 +36,25 @@ class CompletedTasksViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = CompletedTasksState()
         )
+
+    // Nueva función para actualizar el estado de la tarea
+    fun onTaskCheckedChanged(task: Task, isCompleted: Boolean) {
+        viewModelScope.launch {
+            updateTaskStatusUseCase(task, isCompleted)
+        }
+    }
 }
 
 // Fábrica de ViewModel
 class CompletedTasksViewModelFactory(
-    private val getCompletedTasksUseCase: GetCompletedTasksUseCase
+    private val getCompletedTasksUseCase: GetCompletedTasksUseCase,
+    private val updateTaskStatusUseCase: UpdateTaskStatusUseCase // Añadido
 ) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(CompletedTasksViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return CompletedTasksViewModel(getCompletedTasksUseCase) as T
+            return CompletedTasksViewModel(getCompletedTasksUseCase, updateTaskStatusUseCase) as T // Pasar la nueva dependencia
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

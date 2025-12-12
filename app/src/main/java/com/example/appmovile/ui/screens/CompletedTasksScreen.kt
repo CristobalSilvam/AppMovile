@@ -10,11 +10,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -28,32 +26,31 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appmovile.domain.models.Task
 import com.example.appmovile.ui.viewmodels.CompletedTasksViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CompletedTasksScreen(
-    viewModel: CompletedTasksViewModel = viewModel(),
-    // Puedes pasar un callback para volver atrás si lo necesitas
+    viewModel: CompletedTasksViewModel,
     onNavigateBack: () -> Unit
 ) {
     val state = viewModel.state.collectAsState().value
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Historial de Tareas Completadas") },
-            navigationIcon = {
-                IconButton( onClick = onNavigateBack
-                ){
-                    Icon(
-                        imageVector = Icons.Filled.ArrowBackIosNew,
-                        contentDescription = "Volver a Tareas Pendientes"
-                    )
+        topBar = {
+            TopAppBar(
+                title = { Text("Historial de Tareas Completadas") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBackIosNew,
+                            contentDescription = "Volver a Tareas Pendientes"
+                        )
+                    }
                 }
-            }
-
-        ) }
+            )
+        }
     ) { padding ->
         if (state.isLoading) {
             Box(
@@ -62,28 +59,33 @@ fun CompletedTasksScreen(
             ) {
                 CircularProgressIndicator()
             }
+        } else if (state.completedTasks.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("No hay tareas completadas todavía.")
+            }
         } else {
             LazyColumn(modifier = Modifier.padding(padding)) {
                 items(state.completedTasks, key = { it.id }) { task ->
-                    Text(
-                        text = "✅ ${task.title}",
-                        modifier = Modifier.padding(16.dp)
+                    CompletedTaskItem(
+                        task = task,
+                        onCheckedChanged = { isChecked ->
+                            viewModel.onTaskCheckedChanged(task, isChecked)
+                        }
                     )
-                }
-            }
-            if (state.completedTasks.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize().padding(padding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("No hay tareas completadas todavía.")
                 }
             }
         }
     }
 }
+
 @Composable
-fun CompletedTaskItem(task: Task) {
+fun CompletedTaskItem(
+    task: Task,
+    onCheckedChanged: (Boolean) -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -95,20 +97,16 @@ fun CompletedTaskItem(task: Task) {
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.Filled.Check,
-                contentDescription = "Completada",
-                tint = MaterialTheme.colorScheme.primary // o SuccessGreen
-            )
-            Spacer(Modifier.width(16.dp))
-
             Text(
                 text = task.title,
                 style = MaterialTheme.typography.bodyLarge,
-                // Puedes tachar el texto si quieres:
-                // textDecoration = TextDecoration.LineThrough
+                modifier = Modifier.weight(1f)
             )
-            // Aquí puedes añadir la fecha de completado si la tuvieras
+            Spacer(Modifier.width(16.dp))
+            Checkbox(
+                checked = task.isCompleted,
+                onCheckedChange = onCheckedChanged
+            )
         }
     }
 }

@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -21,9 +22,12 @@ import com.example.appmovile.ui.viewmodels.TaskFormViewModel
 import com.example.appmovile.ui.viewmodels.TaskFormViewModelFactory
 import com.example.appmovile.di.AppContainer // Interfaz del contenedor DI
 import com.example.appmovile.ui.screens.CompletedTasksScreen
+import com.example.appmovile.ui.screens.EditTaskScreen
 import com.example.appmovile.ui.screens.TaskDetailScreen
 import com.example.appmovile.ui.viewmodels.CompletedTasksViewModel
 import com.example.appmovile.ui.viewmodels.CompletedTasksViewModelFactory
+import com.example.appmovile.ui.viewmodels.EditTaskViewModel
+import com.example.appmovile.ui.viewmodels.EditTaskViewModelFactory
 import com.example.appmovile.ui.viewmodels.TaskDetailViewModel
 import com.example.appmovile.ui.viewmodels.TaskDetailViewModelFactory
 import com.example.appmovile.utils.createNotificationChannel // Helper de Notificación
@@ -40,7 +44,9 @@ object Destinations {
     const val TASK_FORM = "task_form"
     const val COMPLETED_TASKS = "completed_tasks"
     const val TASK_DETAIL = "task_detail/{taskId}"
+    const val EDIT_TASK = "edit_task/{taskId}" // Nueva ruta
     fun taskDetailRoute(taskId: Int) = "task_detail/$taskId"
+    fun editTaskRoute(taskId: Int) = "edit_task/$taskId" // Helper para la nueva ruta
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -94,13 +100,20 @@ fun MyAppNavigation(appContainer: AppContainer) {
     }
     val completedTasksViewModelFactory = remember {
         CompletedTasksViewModelFactory(
-            getCompletedTasksUseCase = appContainer.getCompletedTasksUseCase
+            getCompletedTasksUseCase = appContainer.getCompletedTasksUseCase,
+            updateTaskStatusUseCase = appContainer.updateTaskStatusUseCase
         )
     }
     val authViewModelFactory = remember {
         AuthViewModelFactory(
             registerUserUseCase = appContainer.registerUserUseCase,
             loginUserUseCase = appContainer.loginUserUseCase
+        )
+    }
+
+    val editTaskViewModelFactory = remember {
+        EditTaskViewModelFactory(
+            updateTaskStatusUseCase = appContainer.updateTaskStatusUseCase
         )
     }
 
@@ -164,7 +177,8 @@ fun MyAppNavigation(appContainer: AppContainer) {
 
             TaskDetailScreen(
                 viewModel = viewModel,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToEdit = { navController.navigate(Destinations.editTaskRoute(it)) }
             )
         }
         //login
@@ -180,6 +194,36 @@ fun MyAppNavigation(appContainer: AppContainer) {
                 },
                 onNavigateBack = { navController.popBackStack() }
             )
+        }
+
+        // Pantalla de Edición
+        composable(
+            route = Destinations.EDIT_TASK,
+            arguments = listOf(navArgument("taskId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val taskId = backStackEntry.arguments?.getInt("taskId") ?: return@composable
+
+            val taskDetailViewModel: TaskDetailViewModel = viewModel(
+                factory = TaskDetailViewModelFactory(
+                    taskId = taskId,
+                    getTaskDetailsUseCase = appContainer.getTaskDetailsUseCase,
+                    updateTaskStatusUseCase = appContainer.updateTaskStatusUseCase
+                )
+            )
+
+            val editTaskViewModel: EditTaskViewModel = viewModel(factory = editTaskViewModelFactory)
+
+            val task = taskDetailViewModel.state.collectAsState().value.task
+            if (task != null) {
+                editTaskViewModel.setTask(task)
+                EditTaskScreen(
+                    task = task,
+                    onSave = {
+                        editTaskViewModel.saveTask(it)
+                        navController.popBackStack()
+                    }
+                )
+            }
         }
     }
 }
