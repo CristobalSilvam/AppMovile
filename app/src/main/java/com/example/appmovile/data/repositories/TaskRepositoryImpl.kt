@@ -1,54 +1,85 @@
 package com.example.appmovile.data.repositories
 
-// 1. Quita imports de Room (DAO, Mappers)
-// 2. Importa el servicio de API y DTOs
+import android.util.Log
+import com.example.appmovile.data.local.UserPreferencesRepository
 import com.example.appmovile.data.remote.TaskApiService
 import com.example.appmovile.data.remote.dto.TaskCreateRequest
 import com.example.appmovile.data.remote.dto.TaskResponse
 import com.example.appmovile.data.remote.dto.TaskUpdateRequest
 import com.example.appmovile.domain.models.Task
 import com.example.appmovile.domain.repositories.TaskRepository
-import java.lang.Exception
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 class TaskRepositoryImpl(
-    // 3. ⬇️ Cambia la dependencia del constructor
-    private val taskApiService: TaskApiService
+    private val taskApiService: TaskApiService,
+    private val preferences: UserPreferencesRepository
 ) : TaskRepository {
 
-    // --- Estado interno reactivo de tareas ---
-    private val _tasksFlow = kotlinx.coroutines.flow.MutableStateFlow<List<Task>>(emptyList())
-    val tasksFlow: kotlinx.coroutines.flow.StateFlow<List<Task>> = _tasksFlow
+    private val _tasksFlow = MutableStateFlow<List<Task>>(emptyList())
 
-
-    // --- Mapeador simple de DTO (Respuesta) a Modelo de Dominio ---
-    private fun TaskResponse.toDomain(): Task {
-        return Task(
-            id = this.id.toInt(), // Cuidado con Long vs Int (ajusta tu modelo Task si es necesario)
-            title = this.title,
-            description = this.description,
-            location = this.location,
-            priority = this.priority,
-            isCompleted = this.isCompleted,
-            reminderTime = null // El DTO de respuesta no tiene reminderTime
-        )
-    }
-
-    // --- Función para refrescar tareas desde el backend (FALTA AGREGAR) ---
-    private suspend fun refreshTasks() {
-        try {
-            val taskResponses = taskApiService.getAllTasks()
-            _tasksFlow.value = taskResponses.map { it.toDomain() }
-        } catch (e: Exception) {
-            _tasksFlow.value = emptyList() // En caso de error
+    init {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                refreshTasks()
+            } catch (e: Exception) {
+                Log.e("TaskRepo", "No se pudieron cargar las tareas al iniciar: ${e.message}")
+            }
         }
     }
 
-    // --- Implementaciones de API ---
+    private suspend fun getCurrentUserId(): Long {
+        val session = preferences.userSession.first()
+        return session?.id ?: throw Exception("Usuario no autenticado.")
+    }
 
-    override fun getAllTasks(): kotlinx.coroutines.flow.StateFlow<List<Task>> = tasksFlow
+    private suspend fun refreshTasks() {
+        try {
+            val userId = getCurrentUserId()
+            val taskResponses = taskApiService.getAllTasks(userId)
+            _tasksFlow.value = taskResponses.map { it.toDomain() }
+        } catch (e: Exception) {
+            Log.e("TaskRepo", "Error al refrescar tareas: ${e.message}")
+        }
+    }
+
+    override fun getAllTasks(): StateFlow<List<Task>> = _tasksFlow
 
     override suspend fun saveTask(task: Task) {
-        // 6. Crea el DTO de Request para la API
+        saveTaskForUser(getCurrentUserId(), task)
+        refreshTasks()
+    }
+
+    override suspend fun updateTaskStatus(task: Task, isCompleted: Boolean) {
+        updateTaskStatusForUser(getCurrentUserId(), task, isCompleted)
+        refreshTasks()
+    }
+
+    override suspend fun deleteTask(taskId: Int) {
+        deleteTaskForUser(getCurrentUserId(), taskId)
+        refreshTasks()
+    }
+
+    override suspend fun getTaskById(id: Int): Task? {
+        return _tasksFlow.value.find { it.id == id }
+    }
+
+    // --- IMPLEMENTACIÓN ADMIN ---
+
+    override suspend fun getTasksByUserId(userId: Long): List<Task> {
+        return try {
+            taskApiService.getAllTasks(userId).map { it.toDomain() }
+        } catch (e: Exception) {
+            Log.e("TaskRepo", "Error admin getTasks: ${e.message}")
+            emptyList()
+        }
+    }
+
+    override suspend fun saveTaskForUser(userId: Long, task: Task) {
         val request = TaskCreateRequest(
             title = task.title,
             description = task.description,
@@ -56,15 +87,21 @@ class TaskRepositoryImpl(
             priority = task.priority
         )
         try {
-            taskApiService.createTask(request)
-            refreshTasks()
+            taskApiService.createTask(userId, request)
         } catch (e: Exception) {
-            // Manejar error
+            Log.e("TaskRepo", "Error admin saveTask: ${e.message}")
         }
     }
 
-    override suspend fun updateTaskStatus(task: Task, isCompleted: Boolean) {
-        // 7. Llama al endpoint de Actualización
+    override suspend fun deleteTaskForUser(userId: Long, taskId: Int) {
+        try {
+            taskApiService.deleteTask(taskId.toLong(), userId)
+        } catch (e: Exception) {
+            Log.e("TaskRepo", "Error admin deleteTask: ${e.message}")
+        }
+    }
+
+    override suspend fun updateTaskStatusForUser(userId: Long, task: Task, isCompleted: Boolean) {
         val request = TaskUpdateRequest(
             title = task.title,
             description = task.description,
@@ -73,32 +110,21 @@ class TaskRepositoryImpl(
             isCompleted = isCompleted
         )
         try {
-            taskApiService.updateTask(task.id.toLong(), request)
-            refreshTasks()
+            taskApiService.updateTask(task.id.toLong(), userId, request)
         } catch (e: Exception) {
-            // Manejar error
+            Log.e("TaskRepo", "Error admin updateTask: ${e.message}")
         }
     }
 
-    override suspend fun deleteTask(taskId: Int) {
-        try {
-            taskApiService.deleteTask(taskId.toLong())
-            refreshTasks()
-        } catch (e: Exception) {
-            // Manejar error
-        }
-    }
-
-    // --- Lógica de Detalle ---
-    override suspend fun getTaskById(id: Int): Task? {
-        // (Nota: No creamos un endpoint para esto en el back-end,
-        // pero si lo hicieras, la lógica iría aquí)
-        // Por ahora, simulamos buscando en la lista completa
-        try {
-            val tasks = taskApiService.getAllTasks()
-            return tasks.find { it.id == id.toLong() }?.toDomain()
-        } catch (e: Exception) {
-            return null
-        }
+    private fun TaskResponse.toDomain(): Task {
+        return Task(
+            id = this.id.toInt(),
+            title = this.title,
+            description = this.description,
+            location = this.location,
+            priority = this.priority,
+            isCompleted = this.isCompleted,
+            reminderTime = null
+        )
     }
 }

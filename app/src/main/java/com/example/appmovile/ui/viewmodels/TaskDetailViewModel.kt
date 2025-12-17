@@ -44,18 +44,6 @@ class TaskDetailViewModel(
             }
         }
     }
-
-    // Función para Modificar Prioridad
-    fun updatePriority(newPriority: String) {
-        val currentTask = _state.value.task ?: return
-
-        viewModelScope.launch {
-            val updatedTask = currentTask.copy(priority = newPriority)
-            updateTaskStatusUseCase(updatedTask, updatedTask.isCompleted)
-            // Refleja el cambio en la vista de detalle
-            _state.value = _state.value.copy(task = updatedTask)
-        }
-    }
 }
 
 // Factory (ya que el ViewModel recibe un ID)

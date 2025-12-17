@@ -6,6 +6,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.appmovile.domain.models.Task
+import com.example.appmovile.ui.theme.PriorityHigh
+import com.example.appmovile.ui.theme.PriorityLow
+import com.example.appmovile.ui.theme.PriorityMedium
 
 @Composable
 fun EditTaskScreen(
@@ -40,6 +43,30 @@ fun EditTaskScreen(
             label = { Text("Location") },
             modifier = Modifier.fillMaxWidth()
         )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Selector de Prioridad
+        Text("Prioridad:", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Button(
+                onClick = { priority = "ALTA" },
+                colors = ButtonDefaults.buttonColors(containerColor = if (priority == "ALTA") PriorityHigh else MaterialTheme.colorScheme.secondaryContainer)
+            ) { Text("Alta") }
+
+            Button(
+                onClick = { priority = "MEDIA" },
+                colors = ButtonDefaults.buttonColors(containerColor = if (priority == "MEDIA") PriorityMedium else MaterialTheme.colorScheme.secondaryContainer)
+            ) { Text("Media") }
+
+            Button(
+                onClick = { priority = "BAJA" },
+                colors = ButtonDefaults.buttonColors(containerColor = if (priority == "BAJA") PriorityLow else MaterialTheme.colorScheme.secondaryContainer)
+            ) { Text("Baja") }
+        }
+
         Spacer(modifier = Modifier.height(8.dp))
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             Checkbox(

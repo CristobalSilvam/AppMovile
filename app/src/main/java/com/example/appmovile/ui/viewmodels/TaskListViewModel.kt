@@ -27,6 +27,7 @@ sealed class WeatherState {
 data class TaskListState(
     val tasks: List<Task> = emptyList(),
     val isLoading: Boolean = true,
+    val userRole: String = "USER",
     val isSortedByPriority: Boolean = false, // Para el botón de ordenar
     val filterPriority: String = "TODAS",
     val weatherState: WeatherState = WeatherState.Loading // ⬅️ Estado del Clima

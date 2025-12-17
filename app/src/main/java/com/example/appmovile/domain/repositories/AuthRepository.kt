@@ -9,9 +9,9 @@ interface AuthRepository {
     // Intenta iniciar sesión con un usuario
     suspend fun login(email: String, passwordHash: String): User? // Devuelve User si tiene éxito, null si falla
 
-    // Verifica si hay un usuario actualmente conectado (simulación simple)
-    suspend fun getCurrentUserEmail(): String?
+    // Verifica si hay un usuario actualmente conectado
+    suspend fun getCurrentUser(): User?
 
-    // Cierra la sesión del usuario actual (simulación simple)
+    // Cierra la sesión del usuario actual
     suspend fun logout()
 }

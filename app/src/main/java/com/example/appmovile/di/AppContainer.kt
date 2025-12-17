@@ -22,6 +22,10 @@ import com.example.appmovile.domain.repositories.WeatherRepository
 import com.example.appmovile.domain.repositories.WeatherRepositoryImpl
 // 5. Importa TODOS los Use Cases
 import com.example.appmovile.domain.use_cases.*
+import com.example.appmovile.data.local.UserPreferencesRepository
+import com.example.appmovile.data.remote.UserApiService
+import com.example.appmovile.data.repositories.UserRepositoryImpl
+import com.example.appmovile.domain.repositories.UserRepository
 
 // 6. Importa Retrofit
 import retrofit2.Retrofit
@@ -42,9 +46,12 @@ interface AppContainer {
     val getTaskDetailsUseCase: GetTaskDetailsUseCase
     val registerUserUseCase: RegisterUserUseCase
     val loginUserUseCase: LoginUserUseCase
+    val logoutUseCase: LogoutUseCase
 
     val weatherRepository: WeatherRepository
     val getWeatherUseCase: GetWeatherUseCase
+
+    val userRepository: UserRepository
 }
 
 // 8. --- IMPLEMENTACIÓN (AppDataContainer) ---
@@ -78,10 +85,18 @@ class AppDataContainer(private val context: Context) : AppContainer {
         externalRetrofit.create(WeatherApiService::class.java) // Servicio de clima
     }
 
+    private val userApiService: UserApiService by lazy {
+        retrofit.create(UserApiService::class.java)
+    }
+
     // --- Repositorios ---
     // ... (taskRepository, authRepository)
     override val weatherRepository: WeatherRepository by lazy {
         WeatherRepositoryImpl(weatherApiService) // Repositorio de Clima
+    }
+
+    override val userRepository: UserRepository by lazy {
+        UserRepositoryImpl(userApiService, userPreferencesRepository)
     }
 
     // --- Casos de Uso ---
@@ -104,6 +119,7 @@ class AppDataContainer(private val context: Context) : AppContainer {
             .build()
     }
 
+    private val userPreferencesRepository = UserPreferencesRepository(context)
     // --- Servicios de API ---
     private val authApiService: AuthApiService by lazy {
         retrofit.create(AuthApiService::class.java)
@@ -116,10 +132,10 @@ class AppDataContainer(private val context: Context) : AppContainer {
 
     // --- Repositorios (Inyecta API Service) ---
     override val taskRepository: TaskRepository by lazy {
-        TaskRepositoryImpl(taskApiService)
+        TaskRepositoryImpl(taskApiService, userPreferencesRepository)
     }
     override val authRepository: AuthRepository by lazy {
-        AuthRepositoryImpl(authApiService)
+        AuthRepositoryImpl(authApiService, userPreferencesRepository)
     }
 
     // 9. --- Casos de Uso (TODOS deben tener 'override val') ---
@@ -146,5 +162,8 @@ class AppDataContainer(private val context: Context) : AppContainer {
     }
     override val loginUserUseCase: LoginUserUseCase by lazy {
         LoginUserUseCase(authRepository)
+    }
+    override val logoutUseCase: LogoutUseCase by lazy {
+        LogoutUseCase(authRepository)
     }
 }

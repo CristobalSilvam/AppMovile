@@ -69,29 +69,8 @@ fun TaskDetailScreen(
                 Text("Ubicación:", style = MaterialTheme.typography.titleMedium)
                 Text(task.location ?: "Sin ubicación especificada", modifier = Modifier.padding(bottom = 16.dp))
 
-                // Selector de Prioridad (igual al de TaskFormScreen)
-                Text("Prioridad:", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    val currentPriority = task.priority.uppercase()
-
-                    Button(
-                        onClick = { viewModel.updatePriority("ALTA") },
-                        colors = ButtonDefaults.buttonColors(containerColor = if (currentPriority == "ALTA") PriorityHigh else MaterialTheme.colorScheme.secondaryContainer)
-                    ) { Text("Alta") }
-
-                    Button(
-                        onClick = { viewModel.updatePriority("MEDIA") },
-                        colors = ButtonDefaults.buttonColors(containerColor = if (currentPriority == "MEDIA") PriorityMedium else MaterialTheme.colorScheme.secondaryContainer)
-                    ) { Text("Media") }
-
-                    Button(
-                        onClick = { viewModel.updatePriority("BAJA") },
-                        colors = ButtonDefaults.buttonColors(containerColor = if (currentPriority == "BAJA") PriorityLow else MaterialTheme.colorScheme.secondaryContainer)
-                    ) { Text("Baja") }
-                }
+                Text("Prioridad:", style = MaterialTheme.typography.titleMedium)
+                Text(task.priority, modifier = Modifier.padding(bottom = 16.dp))
 
                 Spacer(modifier = Modifier.height(16.dp))
 

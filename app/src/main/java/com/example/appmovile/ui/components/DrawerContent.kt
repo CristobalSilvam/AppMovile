@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AdminPanelSettings // <--- IMPORTANTE
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Notifications
@@ -19,29 +20,37 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.appmovile.ui.viewmodels.WeatherState
 
 @Composable
-fun DrawerContent(onOptionClicked: (String) -> Unit, weatherState: WeatherState) {
+fun DrawerContent(
+    onOptionClicked: (String) -> Unit,
+    weatherState: WeatherState,
+    userRole: String // <--- 1. NUEVO PARÁMETRO
+) {
 
     val menuItems = listOf(
         Pair("Login", Icons.Default.AccountCircle),
         Pair("Lista de Tareas", Icons.Default.Notifications),
         Pair("Tareas Completadas", Icons.Default.Checklist),
-        Pair("Agregar Tarea", Icons.Default.Add),
-        Pair("Cerrar Sesión", Icons.Default.Close)
+        Pair("Agregar Tarea", Icons.Default.Add)
     )
+
     Surface (
         color = MaterialTheme.colorScheme.surface,
         modifier = Modifier.fillMaxHeight().fillMaxWidth(0.7f)
     ) {
         Column(modifier = Modifier.fillMaxHeight().padding(16.dp)) {
+
+            // --- SECCIÓN CLIMA ---
             when (weatherState) {
                 is WeatherState.Loading -> {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -51,14 +60,13 @@ fun DrawerContent(onOptionClicked: (String) -> Unit, weatherState: WeatherState)
                     }
                 }
                 is WeatherState.Success -> {
-                    // Muestra la temperatura y descripción
                     Text(
                         text = weatherState.temperature.toInt().toString() + "°C",
-                        style = MaterialTheme.typography.headlineLarge, // Fuente grande
+                        style = MaterialTheme.typography.headlineLarge,
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = weatherState.description.capitalize(), // Muestra la descripción
+                        text = weatherState.description.capitalize(),
                         style = MaterialTheme.typography.titleSmall
                     )
                     Spacer(Modifier.height(16.dp))
@@ -67,26 +75,48 @@ fun DrawerContent(onOptionClicked: (String) -> Unit, weatherState: WeatherState)
                     Text("Clima no disponible.", color = MaterialTheme.colorScheme.error)
                 }
             }
+
             Text(
                 "Bienvenido(a)",
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.padding(bottom = 24.dp)
             )
 
+            // --- ITEMS NORMALES ---
             menuItems.forEach { (title, icon) ->
                 NavigationDrawerItem(
                     label = { Text(title) },
                     icon = { Icon(icon, contentDescription = title) },
                     selected = title == "Lista de Tareas",
-                    onClick = {
-                        onOptionClicked(title)
-                    },
+                    onClick = { onOptionClicked(title) },
                     modifier = Modifier.padding(vertical = 4.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.weight(1f)) // Empuja el contenido inferior hacia abajo
+            // --- BOTÓN ADMIN (SOLO SI ES ADMIN) ---
+            if (userRole == "ADMIN") {
+                NavigationDrawerItem(
+                    label = { Text("Panel Admin", color = Color.Red) },
+                    icon = { Icon(Icons.Filled.AdminPanelSettings, contentDescription = "Admin", tint = Color.Red) },
+                    selected = false,
+                    onClick = { onOptionClicked("Panel Admin") },
+                    colors = NavigationDrawerItemDefaults.colors(
+                        unselectedContainerColor = Color(0xFFFFEBEE) // Fondo rojizo suave
+                    ),
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+            }
 
+            Spacer(modifier = Modifier.weight(1f)) // Empuja lo siguiente hacia abajo
+
+            // --- CERRAR SESIÓN ---
+            NavigationDrawerItem(
+                label = { Text("Cerrar Sesión") },
+                icon = { Icon(Icons.Filled.Close, contentDescription = null) },
+                selected = false,
+                onClick = { onOptionClicked("Cerrar Sesión") },
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
         }
     }
 }

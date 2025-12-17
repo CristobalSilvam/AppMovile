@@ -20,7 +20,8 @@ import com.example.appmovile.ui.viewmodels.TaskListViewModel
 import com.example.appmovile.ui.viewmodels.TaskListViewModelFactory
 import com.example.appmovile.ui.viewmodels.TaskFormViewModel
 import com.example.appmovile.ui.viewmodels.TaskFormViewModelFactory
-import com.example.appmovile.di.AppContainer // Interfaz del contenedor DI
+import com.example.appmovile.di.AppContainer
+import com.example.appmovile.ui.screens.AdminScreen
 import com.example.appmovile.ui.screens.CompletedTasksScreen
 import com.example.appmovile.ui.screens.EditTaskScreen
 import com.example.appmovile.ui.screens.TaskDetailScreen
@@ -30,36 +31,35 @@ import com.example.appmovile.ui.viewmodels.EditTaskViewModel
 import com.example.appmovile.ui.viewmodels.EditTaskViewModelFactory
 import com.example.appmovile.ui.viewmodels.TaskDetailViewModel
 import com.example.appmovile.ui.viewmodels.TaskDetailViewModelFactory
-import com.example.appmovile.utils.createNotificationChannel // Helper de Notificación
-import com.example.appmovile.utils.RequestNotificationPermission // Helper de Permiso
-
+import com.example.appmovile.utils.createNotificationChannel
+import com.example.appmovile.utils.RequestNotificationPermission
 import com.example.appmovile.ui.screens.AuthScreen
+import com.example.appmovile.ui.viewmodels.AdminViewModel
+import com.example.appmovile.ui.viewmodels.AdminViewModelFactory
 import com.example.appmovile.ui.viewmodels.AuthViewModel
 import com.example.appmovile.ui.viewmodels.AuthViewModelFactory
 
-// Definición de Rutas de Navegación
 object Destinations {
     const val AUTH = "auth"
     const val TASK_LIST = "task_list"
     const val TASK_FORM = "task_form"
     const val COMPLETED_TASKS = "completed_tasks"
     const val TASK_DETAIL = "task_detail/{taskId}"
-    const val EDIT_TASK = "edit_task/{taskId}" // Nueva ruta
+    const val EDIT_TASK = "edit_task/{taskId}"
+    const val ADMIN_PANEL = "admin_panel"
+    
     fun taskDetailRoute(taskId: Int) = "task_detail/$taskId"
-    fun editTaskRoute(taskId: Int) = "edit_task/$taskId" // Helper para la nueva ruta
+    fun editTaskRoute(taskId: Int) = "edit_task/$taskId"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
 
-    // Accede a la instancia única del contenedor (Patrón Service Locator)
     private val appContainer: AppContainer
         get() = (application as AppMovileApp).container
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Inicializa el canal de notificación (Requisito IL 2.4)
         createNotificationChannel(this)
 
         setContent {
@@ -70,18 +70,13 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// Composable que gestiona la Navegación y la Inyección de Dependencias
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyAppNavigation(appContainer: AppContainer) {
     val navController = rememberNavController()
 
-    // Recurso Nativo: Solicita el permiso POST_NOTIFICATIONS
     RequestNotificationPermission()
 
-    // Inicialización de Fábricas
-
-    // Fábrica de Listado (Inyecta Obtener, Borrar, y Actualizar Estado)
     val taskListViewModelFactory = remember {
         TaskListViewModelFactory(
             getTaskUseCase = appContainer.getTaskUseCase,
@@ -91,23 +86,26 @@ fun MyAppNavigation(appContainer: AppContainer) {
         )
     }
 
-    // Fábrica de Formulario (Inyecta Guardar y el Contexto para Recursos Nativos)
     val taskFormViewModelFactory = remember {
         TaskFormViewModelFactory(
             saveTaskUseCase = appContainer.saveTaskUseCase,
             applicationContext = appContainer.applicationContext
         )
     }
+    
     val completedTasksViewModelFactory = remember {
         CompletedTasksViewModelFactory(
             getCompletedTasksUseCase = appContainer.getCompletedTasksUseCase,
             updateTaskStatusUseCase = appContainer.updateTaskStatusUseCase
         )
     }
+    
     val authViewModelFactory = remember {
         AuthViewModelFactory(
             registerUserUseCase = appContainer.registerUserUseCase,
-            loginUserUseCase = appContainer.loginUserUseCase
+            loginUserUseCase = appContainer.loginUserUseCase,
+            logoutUseCase = appContainer.logoutUseCase,
+            authRepository = appContainer.authRepository
         )
     }
 
@@ -117,39 +115,60 @@ fun MyAppNavigation(appContainer: AppContainer) {
         )
     }
 
+    // CORRECCIÓN: Inyectar ambos repositorios necesarios
+    val adminViewModelFactory = remember {
+        AdminViewModelFactory(
+            userRepository = appContainer.userRepository,
+            taskRepository = appContainer.taskRepository
+        )
+    }
+
     NavHost(
         navController = navController,
-        startDestination = Destinations.TASK_LIST // Punto de inicio
+        startDestination = Destinations.AUTH
     ) {
-        // Pantalla de Listado (Tasks List)
+        composable(Destinations.AUTH) {
+            val viewModel: AuthViewModel = viewModel(factory = authViewModelFactory)
+            AuthScreen(
+                viewModel = viewModel,
+                onAuthSuccess = {
+                    navController.navigate(Destinations.TASK_LIST) {
+                        popUpTo(Destinations.AUTH) { inclusive = true }
+                    }
+                },
+                onNavigateBack = {
+                    (navController.context as? ComponentActivity)?.finish()
+                }
+            )
+        }
+
         composable(Destinations.TASK_LIST) {
-            // Inyecta el ViewModel usando la fábrica
             val viewModel: TaskListViewModel = viewModel(factory = taskListViewModelFactory)
             TaskListScreen(
+                navController = navController,
                 viewModel = viewModel,
-                onNavigateToForm = {navController.navigate(Destinations.TASK_FORM)},
+                authViewModelFactory = authViewModelFactory,
+                onNavigateToForm = { navController.navigate(Destinations.TASK_FORM) },
                 onNavigateToCompleted = { navController.navigate(Destinations.COMPLETED_TASKS) },
-                onNavigateToAuth = { navController.navigate(Destinations.AUTH) },
-                onViewDetails = { taskId -> navController.navigate(Destinations.taskDetailRoute(taskId))
+                onNavigateToAuth = {
+                    navController.navigate(Destinations.AUTH) {
+                        popUpTo(Destinations.TASK_LIST) { inclusive = true }
+                    }
+                },
+                onViewDetails = { taskId ->
+                    navController.navigate(Destinations.taskDetailRoute(taskId))
                 }
             )
         }
 
-        // Pantalla de Formulario (Add/Edit Task)
         composable(Destinations.TASK_FORM) {
-            // Inyecta el ViewModel usando la fábrica
             val viewModel: TaskFormViewModel = viewModel(factory = taskFormViewModelFactory)
-
-            // Llama a la pantalla con el ViewModel y el callback de éxito
             TaskFormScreen(
                 taskFormViewModel = viewModel,
-                onSaveSuccess = {
-                    // Navega de vuelta a la lista cuando el ViewModel indica guardado exitoso
-                    navController.popBackStack()
-                }
+                onSaveSuccess = { navController.popBackStack() }
             )
         }
-        //historial
+
         composable(Destinations.COMPLETED_TASKS) {
             val viewModel: CompletedTasksViewModel = viewModel(factory = completedTasksViewModelFactory)
             CompletedTasksScreen(
@@ -157,15 +176,20 @@ fun MyAppNavigation(appContainer: AppContainer) {
                 onNavigateBack = { navController.popBackStack() }
             )
         }
-        //detalles
+
+        composable(Destinations.ADMIN_PANEL) {
+            val viewModel: AdminViewModel = viewModel(factory = adminViewModelFactory)
+            AdminScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
         composable(
             route = Destinations.TASK_DETAIL,
             arguments = listOf(navArgument("taskId") { type = NavType.IntType })
         ) { backStackEntry ->
-            // 1. Extrae el ID de la tarea de la URL
             val taskId = backStackEntry.arguments?.getInt("taskId") ?: return@composable
-
-            // 2. Crea la fábrica inyectando el ID y los Use Cases
             val taskDetailViewModelFactory = remember {
                 TaskDetailViewModelFactory(
                     taskId = taskId,
@@ -174,35 +198,18 @@ fun MyAppNavigation(appContainer: AppContainer) {
                 )
             }
             val viewModel: TaskDetailViewModel = viewModel(factory = taskDetailViewModelFactory)
-
             TaskDetailScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToEdit = { navController.navigate(Destinations.editTaskRoute(it)) }
             )
         }
-        //login
-        composable(Destinations.AUTH) {
-            val viewModel: AuthViewModel = viewModel(factory = authViewModelFactory)
-            AuthScreen(
-                viewModel = viewModel,
-                onAuthSuccess = {
-                    // Navega a la lista principal y limpia la pila de atrás
-                    navController.navigate(Destinations.TASK_LIST) {
-                        popUpTo(Destinations.AUTH) { inclusive = true } // Evita volver al login con el botón 'atrás'
-                    }
-                },
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
 
-        // Pantalla de Edición
         composable(
             route = Destinations.EDIT_TASK,
             arguments = listOf(navArgument("taskId") { type = NavType.IntType })
         ) { backStackEntry ->
             val taskId = backStackEntry.arguments?.getInt("taskId") ?: return@composable
-
             val taskDetailViewModel: TaskDetailViewModel = viewModel(
                 factory = TaskDetailViewModelFactory(
                     taskId = taskId,
@@ -210,9 +217,7 @@ fun MyAppNavigation(appContainer: AppContainer) {
                     updateTaskStatusUseCase = appContainer.updateTaskStatusUseCase
                 )
             )
-
             val editTaskViewModel: EditTaskViewModel = viewModel(factory = editTaskViewModelFactory)
-
             val task = taskDetailViewModel.state.collectAsState().value.task
             if (task != null) {
                 editTaskViewModel.setTask(task)
