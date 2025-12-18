@@ -15,11 +15,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.appmovile.AppMovileApp
 import com.example.appmovile.domain.models.Task
 import com.example.appmovile.ui.components.DrawerContent
 import com.example.appmovile.ui.theme.PriorityAccentColor
@@ -38,7 +36,7 @@ import kotlinx.coroutines.launch
 fun TaskListScreen(
     navController: NavController,
     viewModel: TaskListViewModel,
-    authViewModelFactory: AuthViewModelFactory, // Recibimos la fábrica desde MainActivity
+    authViewModelFactory: AuthViewModelFactory,
     onNavigateToForm: () -> Unit,
     onNavigateToCompleted: () -> Unit,
     onNavigateToAuth: () -> Unit,
@@ -70,7 +68,8 @@ fun TaskListScreen(
                         "Lista de Tareas" -> {}
                         "Tareas Completadas" -> onNavigateToCompleted()
                         "Agregar Tarea" -> onNavigateToForm()
-                        "Panel Admin" -> navController.navigate(Destinations.ADMIN_PANEL)
+                        "Panel Admin" -> navController.navigate(Destinations.ADMIN_MENU) // CAMBIADO A ADMIN_MENU
+                        "Mi Equipo" -> navController.navigate(Destinations.LEADER_PANEL)
                         "Cerrar Sesión" -> {
                             authViewModel.logout()
                             navController.navigate(Destinations.AUTH) {
@@ -80,7 +79,7 @@ fun TaskListScreen(
                     }
                 },
                 weatherState = state.weatherState,
-                userRole = authState.user?.role ?: "USER" // Rol dinámico
+                userRole = authState.user?.role ?: "USER"
             )
         }
     ) {

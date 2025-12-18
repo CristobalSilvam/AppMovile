@@ -34,10 +34,15 @@ import com.example.appmovile.ui.viewmodels.TaskDetailViewModelFactory
 import com.example.appmovile.utils.createNotificationChannel
 import com.example.appmovile.utils.RequestNotificationPermission
 import com.example.appmovile.ui.screens.AuthScreen
+import com.example.appmovile.ui.screens.LeaderScreen
+import com.example.appmovile.ui.screens.AdminMenuScreen
+import com.example.appmovile.ui.screens.AdminGroupsScreen
 import com.example.appmovile.ui.viewmodels.AdminViewModel
 import com.example.appmovile.ui.viewmodels.AdminViewModelFactory
 import com.example.appmovile.ui.viewmodels.AuthViewModel
 import com.example.appmovile.ui.viewmodels.AuthViewModelFactory
+import com.example.appmovile.ui.viewmodels.LeaderViewModel
+import com.example.appmovile.ui.viewmodels.LeaderViewModelFactory
 
 object Destinations {
     const val AUTH = "auth"
@@ -46,7 +51,10 @@ object Destinations {
     const val COMPLETED_TASKS = "completed_tasks"
     const val TASK_DETAIL = "task_detail/{taskId}"
     const val EDIT_TASK = "edit_task/{taskId}"
+    const val ADMIN_MENU = "admin_menu"
     const val ADMIN_PANEL = "admin_panel"
+    const val ADMIN_GROUPS = "admin_groups"
+    const val LEADER_PANEL = "leader_panel"
     
     fun taskDetailRoute(taskId: Int) = "task_detail/$taskId"
     fun editTaskRoute(taskId: Int) = "edit_task/$taskId"
@@ -115,9 +123,15 @@ fun MyAppNavigation(appContainer: AppContainer) {
         )
     }
 
-    // CORRECCIÓN: Inyectar ambos repositorios necesarios
     val adminViewModelFactory = remember {
         AdminViewModelFactory(
+            userRepository = appContainer.userRepository,
+            taskRepository = appContainer.taskRepository
+        )
+    }
+
+    val leaderViewModelFactory = remember {
+        LeaderViewModelFactory(
             userRepository = appContainer.userRepository,
             taskRepository = appContainer.taskRepository
         )
@@ -177,10 +191,40 @@ fun MyAppNavigation(appContainer: AppContainer) {
             )
         }
 
+        composable(Destinations.ADMIN_MENU) {
+            AdminMenuScreen(
+                onNavigateToUsers = { navController.navigate(Destinations.ADMIN_PANEL) },
+                onNavigateToGroups = { navController.navigate(Destinations.ADMIN_GROUPS) },
+                onNavigateToMyTasks = { navController.navigate(Destinations.TASK_LIST) },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
         composable(Destinations.ADMIN_PANEL) {
             val viewModel: AdminViewModel = viewModel(factory = adminViewModelFactory)
             AdminScreen(
                 viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Destinations.ADMIN_GROUPS) {
+            val viewModel: AdminViewModel = viewModel(factory = adminViewModelFactory)
+            AdminGroupsScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Destinations.LEADER_PANEL) {
+            val viewModel: LeaderViewModel = viewModel(factory = leaderViewModelFactory)
+            val authViewModel: AuthViewModel = viewModel(factory = authViewModelFactory)
+            val authState = authViewModel.state.collectAsState().value
+            val leaderId = authState.user?.id?.toLongOrNull() ?: 0L
+
+            LeaderScreen(
+                viewModel = viewModel,
+                leaderId = leaderId,
                 onNavigateBack = { navController.popBackStack() }
             )
         }

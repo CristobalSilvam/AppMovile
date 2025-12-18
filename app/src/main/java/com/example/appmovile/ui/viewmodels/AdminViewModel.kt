@@ -14,8 +14,11 @@ import kotlinx.coroutines.launch
 
 data class AdminState(
     val users: List<UserDto> = emptyList(),
+    val leaders: List<UserDto> = emptyList(), // Para la gestión de grupos
     val selectedUserTasks: List<Task> = emptyList(),
+    val selectedGroupMembers: List<UserDto> = emptyList(), // Miembros del líder seleccionado
     val selectedUserId: Long? = null,
+    val selectedLeaderId: Long? = null,
     val isLoading: Boolean = false,
     val error: String? = null
 )
@@ -37,7 +40,8 @@ class AdminViewModel(
             _state.update { it.copy(isLoading = true, error = null) }
             try {
                 val userList = userRepository.getAllUsers()
-                _state.update { it.copy(users = userList, isLoading = false) }
+                val leaderList = userList.filter { it.role == "LEADER" }
+                _state.update { it.copy(users = userList, leaders = leaderList, isLoading = false) }
             } catch (e: Exception) {
                 _state.update { it.copy(error = e.message, isLoading = false) }
             }
@@ -54,8 +58,79 @@ class AdminViewModel(
     private fun loadTasksForUser(userId: Long) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
-            val tasks = taskRepository.getTasksByUserId(userId)
-            _state.update { it.copy(selectedUserTasks = tasks, isLoading = false) }
+            try {
+                val tasks = taskRepository.getTasksByUserId(userId)
+                _state.update { it.copy(selectedUserTasks = tasks, isLoading = false) }
+            } catch (e: Exception) {
+                _state.update { it.copy(error = "Error al cargar tareas: ${e.message}", isLoading = false) }
+            }
+        }
+    }
+
+    // --- GESTIÓN DE ROLES ---
+    fun updateUserRole(userId: Long, newRole: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            try {
+                userRepository.updateUserRole(userId, newRole)
+                loadUsers() // Refrescar la lista
+            } catch (e: Exception) {
+                _state.update { it.copy(error = "Error al actualizar rol: ${e.message}", isLoading = false) }
+            }
+        }
+    }
+
+    // --- GESTIÓN DE GRUPOS PARA ADMIN ---
+
+    fun selectLeader(leaderId: Long?) {
+        _state.update { it.copy(selectedLeaderId = leaderId, selectedGroupMembers = emptyList()) }
+        if (leaderId != null) {
+            loadGroupMembers(leaderId)
+        }
+    }
+
+    private fun loadGroupMembers(leaderId: Long) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            try {
+                val members = userRepository.getGroupMembers(leaderId)
+                _state.update { it.copy(selectedGroupMembers = members, isLoading = false) }
+            } catch (e: Exception) {
+                _state.update { it.copy(error = "Error al cargar miembros: ${e.message}", isLoading = false) }
+            }
+        }
+    }
+
+    fun addMemberToGroup(leaderId: Long, email: String) {
+        viewModelScope.launch {
+            try {
+                userRepository.addMemberByEmail(leaderId, email)
+                loadGroupMembers(leaderId)
+            } catch (e: Exception) {
+                _state.update { it.copy(error = "No se pudo añadir al miembro: ${e.message}") }
+            }
+        }
+    }
+
+    fun removeMemberFromGroup(leaderId: Long, memberId: Long) {
+        viewModelScope.launch {
+            try {
+                userRepository.removeMemberFromGroup(leaderId, memberId)
+                loadGroupMembers(leaderId)
+            } catch (e: Exception) {
+                _state.update { it.copy(error = "Error al remover miembro: ${e.message}") }
+            }
+        }
+    }
+
+    fun deleteGroup(leaderId: Long) {
+        viewModelScope.launch {
+            try {
+                userRepository.deleteGroup(leaderId)
+                loadUsers() // Recargar para actualizar la lista de líderes
+            } catch (e: Exception) {
+                _state.update { it.copy(error = "Error al eliminar grupo: ${e.message}") }
+            }
         }
     }
 
@@ -70,36 +145,46 @@ class AdminViewModel(
         }
     }
 
-    // --- OPERACIONES DE TAREAS PARA EL ADMIN ---
-    
     fun addTaskToUser(title: String, description: String, priority: String) {
         val userId = _state.value.selectedUserId ?: return
         viewModelScope.launch {
-            val newTask = Task(
-                id = 0, 
-                title = title, 
-                description = description, 
-                priority = priority,
-                isCompleted = false // Campo obligatorio según el modelo
-            )
-            taskRepository.saveTaskForUser(userId, newTask)
-            loadTasksForUser(userId)
+            try {
+                val newTask = Task(
+                    id = 0, 
+                    title = title, 
+                    description = description, 
+                    priority = priority,
+                    isCompleted = false
+                )
+                taskRepository.saveTaskForUser(userId, newTask)
+                loadTasksForUser(userId)
+            } catch (e: Exception) {
+                _state.update { it.copy(error = "Error al guardar tarea: ${e.message}") }
+            }
         }
     }
 
     fun deleteTaskFromUser(taskId: Int) {
         val userId = _state.value.selectedUserId ?: return
         viewModelScope.launch {
-            taskRepository.deleteTaskForUser(userId, taskId)
-            loadTasksForUser(userId)
+            try {
+                taskRepository.deleteTaskForUser(userId, taskId)
+                loadTasksForUser(userId)
+            } catch (e: Exception) {
+                _state.update { it.copy(error = "Error al borrar tarea: ${e.message}") }
+            }
         }
     }
 
     fun toggleTaskCompletionForUser(task: Task) {
         val userId = _state.value.selectedUserId ?: return
         viewModelScope.launch {
-            taskRepository.updateTaskStatusForUser(userId, task, !task.isCompleted)
-            loadTasksForUser(userId)
+            try {
+                taskRepository.updateTaskStatusForUser(userId, task, !task.isCompleted)
+                loadTasksForUser(userId)
+            } catch (e: Exception) {
+                _state.update { it.copy(error = "Error al actualizar tarea: ${e.message}") }
+            }
         }
     }
 }

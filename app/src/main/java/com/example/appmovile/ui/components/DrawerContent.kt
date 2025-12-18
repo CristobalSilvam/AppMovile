@@ -12,9 +12,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AdminPanelSettings // <--- IMPORTANTE
+import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Groups // Importado para el líder
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -34,7 +35,7 @@ import com.example.appmovile.ui.viewmodels.WeatherState
 fun DrawerContent(
     onOptionClicked: (String) -> Unit,
     weatherState: WeatherState,
-    userRole: String // <--- 1. NUEVO PARÁMETRO
+    userRole: String
 ) {
 
     val menuItems = listOf(
@@ -93,7 +94,7 @@ fun DrawerContent(
                 )
             }
 
-            // --- BOTÓN ADMIN (SOLO SI ES ADMIN) ---
+            // --- BOTÓN ADMIN ---
             if (userRole == "ADMIN") {
                 NavigationDrawerItem(
                     label = { Text("Panel Admin", color = Color.Red) },
@@ -101,13 +102,27 @@ fun DrawerContent(
                     selected = false,
                     onClick = { onOptionClicked("Panel Admin") },
                     colors = NavigationDrawerItemDefaults.colors(
-                        unselectedContainerColor = Color(0xFFFFEBEE) // Fondo rojizo suave
+                        unselectedContainerColor = Color(0xFFFFEBEE)
                     ),
                     modifier = Modifier.padding(vertical = 4.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.weight(1f)) // Empuja lo siguiente hacia abajo
+            // --- BOTÓN LEADER (AQUÍ ESTABA EL FALTANTE) ---
+            if (userRole == "LEADER") {
+                NavigationDrawerItem(
+                    label = { Text("Mi Equipo", color = MaterialTheme.colorScheme.secondary) },
+                    icon = { Icon(Icons.Filled.Groups, contentDescription = "Mi Equipo", tint = MaterialTheme.colorScheme.secondary) },
+                    selected = false,
+                    onClick = { onOptionClicked("Mi Equipo") },
+                    colors = NavigationDrawerItemDefaults.colors(
+                        unselectedContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
+                    ),
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
 
             // --- CERRAR SESIÓN ---
             NavigationDrawerItem(

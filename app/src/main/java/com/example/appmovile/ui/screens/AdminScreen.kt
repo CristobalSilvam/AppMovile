@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.appmovile.data.remote.dto.UserDto
 import com.example.appmovile.domain.models.Task
 import com.example.appmovile.ui.viewmodels.AdminViewModel
 
@@ -23,6 +24,7 @@ fun AdminScreen(
 ) {
     val state by viewModel.state.collectAsState()
     var showAddTaskDialog by remember { mutableStateOf(false) }
+    var userToEdit by remember { mutableStateOf<UserDto?>(null) }
 
     Scaffold(
         topBar = {
@@ -60,8 +62,8 @@ fun AdminScreen(
                     LazyColumn {
                         items(state.users) { user ->
                             UserItem(
-                                email = user.email,
-                                role = user.role,
+                                user = user,
+                                onEditRole = { userToEdit = it },
                                 onClick = { viewModel.selectUser(user.id) },
                                 onDelete = { viewModel.deleteUser(user.id) }
                             )
@@ -90,6 +92,18 @@ fun AdminScreen(
             }
         }
 
+        // Diálogo para Cambiar Rol
+        if (userToEdit != null) {
+            EditRoleDialog(
+                user = userToEdit!!,
+                onDismiss = { userToEdit = null },
+                onConfirm = { newRole ->
+                    viewModel.updateUserRole(userToEdit!!.id, newRole)
+                    userToEdit = null
+                }
+            )
+        }
+
         if (showAddTaskDialog) {
             AddTaskAdminDialog(
                 onDismiss = { showAddTaskDialog = false },
@@ -103,7 +117,7 @@ fun AdminScreen(
 }
 
 @Composable
-fun UserItem(email: String, role: String, onClick: () -> Unit, onDelete: () -> Unit) {
+fun UserItem(user: UserDto, onEditRole: (UserDto) -> Unit, onClick: () -> Unit, onDelete: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().padding(8.dp).clickable { onClick() }
     ) {
@@ -111,14 +125,58 @@ fun UserItem(email: String, role: String, onClick: () -> Unit, onDelete: () -> U
             Icon(Icons.Filled.Person, null)
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
-                Text(email, style = MaterialTheme.typography.titleMedium)
-                Text("Rol: $role", style = MaterialTheme.typography.bodySmall)
+                Text(user.email, style = MaterialTheme.typography.titleMedium)
+                Text("Rol: ${user.role}", style = MaterialTheme.typography.bodySmall)
             }
-            if (role != "ADMIN") {
-                IconButton(onClick = onDelete) { Icon(Icons.Filled.Delete, null, tint = Color.Red) }
+            
+            // EL ADMIN NO PUEDE MODIFICAR NI ELIMINAR OTROS ADMINS
+            if (user.role != "ADMIN") {
+                IconButton(onClick = { onEditRole(user) }) {
+                    Icon(Icons.Filled.EditNote, contentDescription = "Cambiar Rol", tint = MaterialTheme.colorScheme.primary)
+                }
+                IconButton(onClick = onDelete) { 
+                    Icon(Icons.Filled.Delete, null, tint = Color.Red) 
+                }
+            } else {
+                // Indicador visual de que es una cuenta protegida (opcional)
+                Icon(
+                    imageVector = Icons.Filled.Shield, 
+                    contentDescription = "Administrador Protegido",
+                    tint = Color.Gray,
+                    modifier = Modifier.padding(12.dp)
+                )
             }
         }
     }
+}
+
+@Composable
+fun EditRoleDialog(user: UserDto, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
+    val roles = listOf("USER", "LEADER", "PREMIUM", "ADMIN")
+    var selectedRole by remember { mutableStateOf(user.role) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Cambiar Rol: ${user.email}") },
+        text = {
+            Column {
+                roles.forEach { role ->
+                    Row(
+                        Modifier.fillMaxWidth().clickable { selectedRole = role }.padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected = (role == selectedRole), onClick = { selectedRole = role })
+                        Text(role, Modifier.padding(start = 8.dp))
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onConfirm(selectedRole) }) { Text("Guardar") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
+        }
+    )
 }
 
 @Composable
@@ -148,7 +206,6 @@ fun AddTaskAdminDialog(onDismiss: () -> Unit, onConfirm: (String, String, String
             Column {
                 TextField(value = title, onValueChange = { title = it }, label = { Text("Título") })
                 TextField(value = desc, onValueChange = { desc = it }, label = { Text("Descripción") })
-                // Simplificado: En una app real usarías un Dropdown
                 Text("Prioridad: ALTA, MEDIA, BAJA")
                 TextField(value = priority, onValueChange = { priority = it.uppercase() })
             }
