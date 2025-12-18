@@ -41,7 +41,7 @@ interface AppContainer {
 
 class AppDataContainer(private val context: Context) : AppContainer {
 
-    private val BASE_URL = "http://10.0.2.2:8080/"
+    private val BASE_URL = "http://192.168.1.91:8081/"
     private val WEATHER_API_URL = "https://api.openweathermap.org/data/2.5/"
 
     private val client: OkHttpClient by lazy {

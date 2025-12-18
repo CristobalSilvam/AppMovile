@@ -19,6 +19,14 @@ import com.example.appmovile.ui.theme.PriorityLow
 import com.example.appmovile.ui.theme.PriorityMedium
 import com.example.appmovile.ui.viewmodels.TaskFormViewModel
 
+import android.graphics.Bitmap
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import coil.compose.rememberAsyncImagePainter
+import com.example.appmovile.utils.saveBitmapToCache
+import androidx.compose.foundation.Image
+import android.Manifest
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskFormScreen(
@@ -26,6 +34,38 @@ fun TaskFormScreen(
     onSaveSuccess: () -> Unit
 ) {
     val state = taskFormViewModel.state.collectAsState().value
+
+    val context = LocalContext.current
+
+// Galería
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let { taskFormViewModel.onImageSelected(it) }
+    }
+
+// Launcher de cámara
+    val cameraLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        bitmap?.let {
+            try {
+                val uri = saveBitmapToCache(context, it)
+                taskFormViewModel.onImageSelected(uri)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    // Launcher de permiso de cámara
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            cameraLauncher.launch(null)
+        }
+    }
 
     // Efecto lateral: Ejecuta la navegación si el ViewModel indica éxito
     LaunchedEffect(key1 = state.saveSuccessful) {
@@ -135,6 +175,39 @@ fun TaskFormScreen(
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(16.dp))
+
+            state.imageUri?.let { uri ->
+                Image(
+                    painter = rememberAsyncImagePainter(uri),
+                    contentDescription = "Imagen de la tarea",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .padding(vertical = 8.dp)
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                OutlinedButton(
+                    onClick = {
+                        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                    }
+                ) {
+                    Text("Tomar Foto")
+                }
+
+                OutlinedButton(
+                    onClick = { galleryLauncher.launch("image/*") }
+                ) {
+                    Text("Galería")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
 
             // (La selección de prioridad y otros campos irían aquí, llamando a onPriorityChange)
 

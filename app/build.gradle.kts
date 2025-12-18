@@ -87,4 +87,6 @@ dependencies {
     testImplementation("app.cash.turbine:turbine:1.0.0")
     
     testImplementation("io.mockk:mockk:1.13.12")
+
+    implementation("io.coil-kt:coil-compose:2.6.0")
 }

@@ -1,6 +1,9 @@
 package com.example.appmovile.ui.viewmodels
 
+import com.example.appmovile.domain.models.User
+import com.example.appmovile.domain.repositories.AuthRepository
 import com.example.appmovile.domain.use_cases.LoginUserUseCase
+import com.example.appmovile.domain.use_cases.LogoutUseCase
 import com.example.appmovile.domain.use_cases.RegisterUserUseCase
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -23,11 +26,27 @@ class AuthViewModelTest {
 
     private val registerUserUseCase: RegisterUserUseCase = mockk()
     private val loginUserUseCase: LoginUserUseCase = mockk()
+    private val logoutUseCase: LogoutUseCase = mockk()
+    private val authRepository: AuthRepository = mockk()
+
+    private val fakeUser = User(
+        id = "1",
+        email = "user@a.com",
+        role = "USER",
+        name = "Test User"
+    )
 
     @Before
     fun setup() {
         Dispatchers.setMain(dispatcher)
-        viewModel = AuthViewModel(registerUserUseCase, loginUserUseCase)
+        coEvery { authRepository.getCurrentUser() } returns null
+
+        viewModel = AuthViewModel(
+            registerUserUseCase,
+            loginUserUseCase,
+            logoutUseCase,
+            authRepository
+        )
     }
 
     @After
@@ -60,7 +79,7 @@ class AuthViewModelTest {
         viewModel.onEmailChange("user@a.com")
         viewModel.onPasswordChange("123456")
 
-        coEvery { loginUserUseCase("user@a.com","123456") } returns true
+        coEvery { loginUserUseCase("user@a.com","123456") } returns fakeUser
 
         viewModel.authenticate()
         advanceUntilIdle()
@@ -68,6 +87,7 @@ class AuthViewModelTest {
         val state = viewModel.state.value
         assertFalse(state.isLoading)
         assertTrue(state.authSuccess)
+        assertEquals(fakeUser, state.user)
         assertEquals(null, state.errorMessage)
     }
 
@@ -77,7 +97,7 @@ class AuthViewModelTest {
         viewModel.onEmailChange("user@a.com")
         viewModel.onPasswordChange("wrong")
 
-        coEvery { loginUserUseCase("user@a.com","wrong") } returns false
+        coEvery { loginUserUseCase("user@a.com","wrong") } throws IllegalArgumentException("Email o contraseña incorrectos.")
 
         viewModel.authenticate()
         advanceUntilIdle()

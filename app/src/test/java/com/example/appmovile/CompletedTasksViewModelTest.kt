@@ -2,6 +2,7 @@ package com.example.appmovile.ui.viewmodels
 
 import com.example.appmovile.domain.models.Task
 import com.example.appmovile.domain.use_cases.GetCompletedTasksUseCase
+import com.example.appmovile.domain.use_cases.UpdateTaskStatusUseCase
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +26,7 @@ class CompletedTasksViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private lateinit var viewModel: CompletedTasksViewModel
     private val getCompletedTasksUseCase: GetCompletedTasksUseCase = mockk()
+    private val updateTaskStatusUseCase: UpdateTaskStatusUseCase = mockk(relaxed = true)
 
     private val completedList = listOf(
         Task(
@@ -64,13 +66,17 @@ class CompletedTasksViewModelTest {
         val flow = MutableStateFlow(completedList)
         every { getCompletedTasksUseCase() } returns flow
 
-        viewModel = CompletedTasksViewModel(getCompletedTasksUseCase)
+        viewModel = CompletedTasksViewModel(
+            getCompletedTasksUseCase,
+            updateTaskStatusUseCase
+        )
 
         // Esperar la primera emisión real ignorando el initialValue
         val state = viewModel.state
             .drop(1) // descarta el initialValue donde isLoading = true
             .first()
 
+        // Assert
         assertFalse(state.isLoading)
         assertEquals(2, state.completedTasks.size)
         assertEquals("Tarea 1", state.completedTasks[0].title)

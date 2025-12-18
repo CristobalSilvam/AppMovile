@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.lang.IllegalArgumentException
+import android.net.Uri
 
 // ⬇️ Estado de la UI expuesto a la pantalla
 data class TaskFormState(
@@ -18,6 +19,7 @@ data class TaskFormState(
     val description: String = "",
     val location: String = "",
     val priority: String = "MEDIA",
+    val imageUri: Uri? = null,
     val titleError: String? = null,
     val isSaving: Boolean = false,
     val saveSuccessful: Boolean = false
@@ -49,6 +51,10 @@ class TaskFormViewModel(
 
     fun onLocationChange(newLocation: String) {
         _state.value = _state.value.copy(location = newLocation)
+    }
+
+    fun onImageSelected(uri: Uri) {
+        _state.value = _state.value.copy(imageUri = uri)
     }
     // ----------------------------------------------------
     // 2. Lógica de Guardado (IL 2.2)

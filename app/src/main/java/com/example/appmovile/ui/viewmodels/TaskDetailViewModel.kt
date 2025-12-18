@@ -44,6 +44,21 @@ class TaskDetailViewModel(
             }
         }
     }
+
+    fun updatePriority(newPriority: String) {
+        val currentTask = _state.value.task ?: return
+        val updatedTask = currentTask.copy(priority = newPriority)
+
+        _state.value = _state.value.copy(task = updatedTask)
+
+        viewModelScope.launch {
+            try {
+                updateTaskStatusUseCase(updatedTask, currentTask.isCompleted)
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(errorMessage = "Error al actualizar prioridad: ${e.message}")
+            }
+        }
+    }
 }
 
 // Factory (ya que el ViewModel recibe un ID)
